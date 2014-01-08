@@ -12,7 +12,7 @@ e you can build that before reporting Makefile issues.
 #Building on Cygwin
 
 Install Arduino 1.0.5 to "D:\Program Files (x86)\Teensy\arduino-1.0.5"
-Install Teensyduino and use the same path.
+Install Teensyduino >= 1.18-RC1 and use the same path
 Install Cygwin
 
 From a cygwin terminal
@@ -26,7 +26,7 @@ From a cygwin terminal
 #Building on OSX
 
 Install Arduino 1.0.5 to /Applications
-Install Teensyduino and use the same path.
+Install Teensyduino >= 1.18-RC1 and use the same path.
 
 From a terminal issue
 

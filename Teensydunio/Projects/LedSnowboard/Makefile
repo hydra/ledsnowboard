@@ -115,12 +115,15 @@ $(TARGET).elf: $(OBJS) $(COREPATH)/mk20dx256.ld
 %.hex: %.elf
 	$(SIZE) $<
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
-	$(abspath $(TOOLSPATH))/teensy &
 ifeq ($(OS),Windows_NT)
 	#cygwin
 	# give the teensy loader a chance before teensy_post_compile looks for it
+	$(abspath $(TOOLSPATH))/teensy &
 	sleep 1 
+else eq ($(OSTYPE),darwin13)
+	open $(abspath $(TOOLSPATH))/teensy &
 endif
+
 	$(abspath $(TOOLSPATH))/teensy_post_compile -file=$(basename $@) -path="$(SYSTEM_PWD)" -tools=$(abspath $(TOOLSPATH))
 	-$(abspath $(TOOLSPATH))/teensy_reboot
 
