@@ -88,7 +88,6 @@ SRC_TEENSY_CPP = \
         Print.cpp \
         WString.cpp \
         usb_inst.cpp \
-#        HardwareSerial1.cpp \
 
 STANDARD_LIBRARIES = \
         $(LIBRARYPATH)/OctoWS2811/OctoWS2811.cpp \
@@ -117,7 +116,11 @@ $(TARGET).elf: $(OBJS) $(COREPATH)/mk20dx256.ld
 	$(SIZE) $<
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 	$(abspath $(TOOLSPATH))/teensy &
-	sleep 1 # give the teensy loader a chance before teensy_post_compile looks for it
+ifeq ($(OS),Windows_NT)
+	#cygwin
+	# give the teensy loader a chance before teensy_post_compile looks for it
+	sleep 1 
+endif
 	$(abspath $(TOOLSPATH))/teensy_post_compile -file=$(basename $@) -path="$(SYSTEM_PWD)" -tools=$(abspath $(TOOLSPATH))
 	-$(abspath $(TOOLSPATH))/teensy_reboot
 
