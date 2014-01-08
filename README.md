@@ -25,3 +25,7 @@ On OSX that would likely be `/Applications/Arduino.app/Contents/Resources/Java`
  
 Additionally each executable project needs a path variable called `TEENSYDUINO` which points to the same
 location so that Eclipse can resolve the include files.
+
+# Building
+
+See the Readme.md files in each executable project for further details. 
