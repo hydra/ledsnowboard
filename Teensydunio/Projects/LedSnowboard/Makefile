@@ -65,6 +65,13 @@ CXX = $(abspath $(COMPILERPATH))/arm-none-eabi-g++
 OBJCOPY = $(abspath $(COMPILERPATH))/arm-none-eabi-objcopy
 SIZE = $(abspath $(COMPILERPATH))/arm-none-eabi-size
 
+ifeq ($(OS),Windows_NT)
+#cygwin
+SYSTEM_PWD = $(shell cygpath -w -a .)
+else
+#osx/linux
+SYSTEM_PWD = $(abspath $(shell pwd))
+endif
 SRC_TEENSY_C = \
         mk20dx128.c \
         pins_teensy.c \
@@ -109,7 +116,9 @@ $(TARGET).elf: $(OBJS) $(COREPATH)/mk20dx256.ld
 %.hex: %.elf
 	$(SIZE) $<
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
-	$(abspath $(TOOLSPATH))/teensy_post_compile -file=$(basename $@) -path="$(shell cygpath -w -a .)" -tools=$(abspath $(TOOLSPATH))
+	$(abspath $(TOOLSPATH))/teensy &
+	sleep 1 # give the teensy loader a chance before teensy_post_compile looks for it
+	$(abspath $(TOOLSPATH))/teensy_post_compile -file=$(basename $@) -path="$(SYSTEM_PWD)" -tools=$(abspath $(TOOLSPATH))
 	-$(abspath $(TOOLSPATH))/teensy_reboot
 
 
