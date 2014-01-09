@@ -40,7 +40,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/MPU6050}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/I2Cdev}&quot;"/>
 								</option>
-								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.1467704968" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
+								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.1467704968" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DF_CPU=96000000"/>
 									<listOptionValue builtIn="false" value="USB_SERIAL"/>
 									<listOptionValue builtIn="false" value="LAYOUT_US_ENGLISH"/>
@@ -51,6 +51,29 @@
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1586847572" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1392948868" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath"/>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1236990700" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<folderInfo id="0.971546247.371968904" name="/" resourcePath="arm-none-eabi-include">
+						<toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.370057822" name="No ToolChain" superClass="org.eclipse.cdt.build.core.prefbase.toolchain" unusedChildren="">
+							<tool id="org.eclipse.cdt.build.core.settings.holder.libs.1261257907" name="holder for library settings" superClass="org.eclipse.cdt.build.core.settings.holder.libs.517143034"/>
+							<tool id="org.eclipse.cdt.build.core.settings.holder.382707080" name="Assembly" superClass="org.eclipse.cdt.build.core.settings.holder.1233270136">
+								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.2113903236" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
+							</tool>
+							<tool id="org.eclipse.cdt.build.core.settings.holder.1240016900" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder.1289396109">
+								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1353720663" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/arm-none-eabi-include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/arm-none-eabi-include-c++}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/teensy3}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/libraries/OctoWS2811}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/libraries/Wire}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/MPU6050}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/I2Cdev}&quot;"/>
+								</option>
+								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.989734510" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
+							</tool>
+							<tool id="org.eclipse.cdt.build.core.settings.holder.528809892" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder.1586847572">
+								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1693323044" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 						</toolChain>
 					</folderInfo>

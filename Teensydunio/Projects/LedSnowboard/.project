@@ -31,6 +31,11 @@
 			<locationURI>TEENSYDUINO/hardware/tools/arm-none-eabi/arm-none-eabi/include</locationURI>
 		</link>
 		<link>
+			<name>arm-none-eabi-include-c++</name>
+			<type>2</type>
+			<locationURI>TEENSYDUINO/hardware/tools/arm-none-eabi/lib/gcc/arm-none-eabi/4.7.2/include</locationURI>
+		</link>
+		<link>
 			<name>libraries</name>
 			<type>2</type>
 			<locationURI>TEENSYDUINO/libraries</locationURI>
