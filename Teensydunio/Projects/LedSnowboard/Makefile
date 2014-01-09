@@ -11,7 +11,6 @@ OPTIONS = $(CFLAGS_TEENSY_31) $(CFLAGS_CORTEX_M4)
 # options needed by many Arduino libraries
 OPTIONS += -DARDUINO=105
 
-
 #************************************************************************
 # Location of Teensyduino utilities, Toolchain, and Arduino Libraries.
 # To use this makefile without Arduino, copy the resources from these
@@ -43,14 +42,26 @@ LIBRARY_FLAGS = \
 # Settings below this point usually do not need to be edited
 #************************************************************************
 
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS = WINDOWS
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        DETECTED_OS = LINUX
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        DETECTED_OS = OSX
+    endif
+endif
+
 # CPPFLAGS = compiler options for C and C++
 CPPFLAGS = -Wall -g -Os -nostdlib -MMD $(OPTIONS) -I. -I$(COREPATH) $(LIBRARY_FLAGS)
 
 # compiler options for C++ only
-CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
+CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti# -Wp,-v
 
 # compiler options for C only
-CFLAGS = -I$(COREPATH)
+CFLAGS = -I$(COREPATH)# -Wp,-v
 
 # linker options
 LDFLAGS = -Os -Wl,--gc-sections -mcpu=cortex-m4 -mthumb -T$(COREPATH)/mk20dx256.ld
@@ -65,7 +76,7 @@ CXX = $(abspath $(COMPILERPATH))/arm-none-eabi-g++
 OBJCOPY = $(abspath $(COMPILERPATH))/arm-none-eabi-objcopy
 SIZE = $(abspath $(COMPILERPATH))/arm-none-eabi-size
 
-ifeq ($(OS),Windows_NT)
+ifeq ("$(DETECTED_OS)","WINDOWS")
 #cygwin
 SYSTEM_PWD = $(shell cygpath -w -a .)
 else
@@ -115,13 +126,15 @@ $(TARGET).elf: $(OBJS) $(COREPATH)/mk20dx256.ld
 %.hex: %.elf
 	$(SIZE) $<
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
-ifeq ($(OS),Windows_NT)
+ifeq ("$(DETECTED_OS)","WINDOWS")
 	#cygwin
 	# give the teensy loader a chance before teensy_post_compile looks for it
 	$(abspath $(TOOLSPATH))/teensy &
 	sleep 1 
-else eq ($(OSTYPE),darwin13)
+else ifeq ("$(DETECTED_OS)","OSX")
 	open $(abspath $(TOOLSPATH))/teensy &
+else
+	$(abspath $(TOOLSPATH))/teensy
 endif
 
 	$(abspath $(TOOLSPATH))/teensy_post_compile -file=$(basename $@) -path="$(SYSTEM_PWD)" -tools=$(abspath $(TOOLSPATH))
