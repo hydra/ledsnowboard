@@ -102,7 +102,9 @@ SRC_TEENSY_CPP = \
 
 STANDARD_LIBRARIES = \
         $(LIBRARYPATH)/OctoWS2811/OctoWS2811.cpp \
-        $(LIBRARYPATH)/Wire/Wire.cpp \
+        $(LIBRARYPATH)/Wire/Wire.cpp
+
+PROJECT_SPECIFIC_LIBRARIES = \
         ../../Libraries/I2Cdev/I2Cdev.cpp \
         ../../Libraries/MPU6050/MPU6050.cpp \
 
@@ -114,7 +116,7 @@ OBJS := \
         $(addprefix $(COREPATH)/, $(SRC_TEENSY_CPP:.cpp=.o)) \
         $(addprefix $(COREPATH)/, $(SRC_TEENSY_C:.c=.o)) \
         $(STANDARD_LIBRARIES:.cpp=.o) \
-
+        $(PROJECT_SPECIFIC_LIBRARIES:.cpp=.o) \
 
 # the actual makefile rules (all .o files built by GNU make's default implicit rules)
 
@@ -145,6 +147,6 @@ endif
 -include $(OBJS:.o=.d)
 
 clean:
-	rm -f *.o *.d $(TARGET).elf $(TARGET).hex
+	rm -f *.o *.d $(COREPATH)/*.o $(COREPATH)/*.d $(LIBRARYPATH)/*/*.o $(LIBRARYPATH)/*/*.d ../../Libraries/*/*.o ../../Libraries/*/*.d $(TARGET).elf $(TARGET).hex
 
 
