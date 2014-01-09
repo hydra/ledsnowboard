@@ -10,39 +10,39 @@ PROGMEM prog_uchar animation1[] = { 86,1,0,3,0,0,0,0,0,0,0,0,0,0,0,0,1,0,255,255
 #include "I2Cdev.h"
 #include "MPU6050.h"
 
-MPU6050 iAccelGyro;
+MPU6050 accelGyro;
 
-const int ledsPerStrip = 2;
+#define LEDS_PER_STRIP 2
 
-DMAMEM int displayMemory[ledsPerStrip * 6];
-int drawingMemory[ledsPerStrip * 6];
+DMAMEM int displayMemory[LEDS_PER_STRIP * 6];
+int drawingMemory[LEDS_PER_STRIP * 6];
 
 const int config = WS2811_GRB | WS2811_800kHz;
 
-OctoWS2811 leds( ledsPerStrip, displayMemory, drawingMemory, config);
+OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, drawingMemory, config);
 bool blinkState = false;
 
 struct valueAxis {
-    int iLowValue;
-    int iHighValue;
-    int iZeroValue;
+    int lowValue;
+    int highValue;
+    int zeroValue;
 }typedef ValueAxis;
 
-const int kColour = 1;
-const int kFunction = 2;
-const int kLinked = 3;
+// Frame Types
+#define FT_COLOUR 1
+#define FT_FUNCTION 2
+#define FT_LINKED 3
 
-const int kInitialLed = 1;
+#define INITIAL_LED 1
 
-const int kHeaderByte = 0x56;
-const int kTerminatingByte = 0x45;
-const int kEscapeByte = 0x02;
-const int kXorByte = 0x20;
+#define HEADER_BYTE 0x56
+#define TERMINATING_BYTE 0x45
+#define ESCAPE_BYTE 0x02
+#define XOR_BYTE 0x20
 
-const int kMillisecondsInASecond = 1000;
-const int kMicrosecondsInAMillsecond = 1000;
-const int kMicrosecondsInASecond = kMillisecondsInASecond
-        * kMicrosecondsInAMillsecond;
+#define MILLISECONDS_IN_A_SECOND 1000
+#define MICROSECONDS_IN_A_MILLISECOND 1000
+#define MICROSECONDS_IN_A_SECOND MILLISECONDS_IN_A_SECOND * MICROSECONDS_IN_A_MILLISECOND
 
 unsigned char iValueAxisData[16][201];
 
@@ -53,7 +53,7 @@ signed int iFunctions[10][3];
 int iCounter;
 int iTimeAxisNum;
 int iNumValueAxes;
-int iNumLeds;
+int numLeds;
 
 int iTopOfTimeAxis;
 
@@ -93,18 +93,18 @@ void setup() {
     #endif
       
     Serial.begin(115200);
-    delayMicroseconds(kMicrosecondsInASecond * 5);
+    delayMicroseconds(MICROSECONDS_IN_A_SECOND * 5);
     
     digitalWrite(LED_PIN, false);
 
     // initialize device
     Serial.println("Initializing I2C devices...");
     while (true) {
-        iAccelGyro.initialize();
+        accelGyro.initialize();
   
       // verify connection
       Serial.println("Testing device connections...");
-      if (iAccelGyro.testConnection()) {
+      if (accelGyro.testConnection()) {
         Serial.println("MPU6050 connection successful");
         break;
       } else {
@@ -138,16 +138,16 @@ void readAnimationDetails() {
         }
     }
 
-    if (readByteUnsignedChar(&iCounter) != kHeaderByte) {
+    if (readByteUnsignedChar(&iCounter) != HEADER_BYTE) {
         //throw new InvalidAnimationException("No header byte");
     }
 
     unsigned char numLedsHigh = readByteUnsignedChar(&iCounter);
     unsigned char numLedsLow = readByteUnsignedChar(&iCounter);
 
-    iNumLeds = numLedsHigh |= numLedsLow << 8;
+    numLeds = numLedsHigh |= numLedsLow << 8;
     Serial.print("led count is ");
-    Serial.print(iNumLeds, DEC);
+    Serial.print(numLeds, DEC);
     Serial.print("\n");
 
     iNumFunctions = readByteUnsignedChar(&iCounter);
@@ -240,7 +240,7 @@ void readFunctionData(int num) {
 int getNormalisedAccelerometerValue() {
     int16_t ax, ay, az;
     int16_t gx, gy, gz;
-    iAccelGyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    accelGyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
     if(iZeroAx == 0) {
         Serial.print("new zero :");
         Serial.print(ax, DEC);
@@ -444,15 +444,15 @@ void readAxis(int number) {
                 frame++) {
             //  Serial.print(frame, DEC);
             //   Serial.print("\n");
-            int ledNum = kInitialLed;
-            for (int i = 0; i < iNumLeds; i++) {
+            int ledNum = INITIAL_LED;
+            for (int i = 0; i < numLeds; i++) {
                 char ledNum = readByteUnsignedChar(&iCounter); // led number
                 //   Serial.print(ledNum, DEC);
 
                 unsigned char frameType = readByteUnsignedChar(&iCounter);
 
                 switch (frameType) {
-                case kFunction:
+                case FT_FUNCTION:
                     iValueAxisData[i][iValueAxisOffset + frame] =
                             readByteUnsignedChar(&iCounter);
                     //if(iValueAxisData[i][iValueAxisOffset + frame] != 0) {
@@ -461,7 +461,7 @@ void readAxis(int number) {
                     //  Serial.print("\n");
                     // }
                     break;
-                case kLinked:
+                case FT_LINKED:
                     iValueAxisData[i][iValueAxisOffset + frame] = 255;
                     break;
                 }
@@ -479,7 +479,7 @@ void readAxisData(int number) {
         // Serial.print(frame, DEC);
         // Serial.print("\n");
         //int ledNum = kInitialLed;
-        for (int i = 0; i < iNumLeds; i++) {
+        for (int i = 0; i < numLeds; i++) {
             int ledNum = readByteUnsignedChar(&iCounter); // led number
             //Serial.print(ledNum, DEC);
             //Serial.print("\n");
@@ -487,10 +487,10 @@ void readAxisData(int number) {
             unsigned char frameType = readByteUnsignedChar(&iCounter);
 
             switch (frameType) {
-            case kFunction:
+            case FT_FUNCTION:
                 //readFunctionAndSetColour();
                 break;
-            case kColour:
+            case FT_COLOUR:
                 readAndSetColour(i);
                 break;
             }
@@ -500,26 +500,17 @@ void readAxisData(int number) {
         leds.show();
         //Serial.print("DONE!");
 
-        delayMicroseconds(iTimeAxisSpeed * kMicrosecondsInAMillsecond);
+        delayMicroseconds(iTimeAxisSpeed * MICROSECONDS_IN_A_MILLISECOND);
     }
 
     iCounter = iTopOfTimeAxis;
 }
-/*
-void autoCalibrate() {
-  if (ax < minAx) {
-    minAx = ax;
-  }
-  if (ax > maxAx) {
-    maxAx = ax;
-  }
-}*/
 
 unsigned char readByteUnsignedChar(int* aPosition) {
     unsigned char readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
-    if (readByte == kEscapeByte) {
+    if (readByte == ESCAPE_BYTE) {
         readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
-        readByte = readByte ^ kXorByte;
+        readByte = readByte ^ XOR_BYTE;
     }
 
     return readByte;
@@ -527,9 +518,9 @@ unsigned char readByteUnsignedChar(int* aPosition) {
 
 signed char readByteSignedChar(int* aPosition) {
     signed char readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
-    if (readByte == kEscapeByte) {
+    if (readByte == ESCAPE_BYTE) {
         readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
-        readByte = readByte ^ kXorByte;
+        readByte = readByte ^ XOR_BYTE;
     }
 
     return readByte;
