@@ -17,6 +17,11 @@
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
+#define COLOR_COMPONENT_COUNT 3 // R,G and B
+#define VALUES_IN_RANGE_FROM_MINUS_100_TO_PLUS_100 201
+#define COUNT_OF_VALUE_AXES_IN_ANIMATION 16
+#define COUNT_OF_FUNCTIONS_IN_ANIMATION 3
+
 PROGMEM prog_uchar animation1[] = { 86, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 1, 0, 255, 255, 0, 0,
         0, 0, 255, 255, 0, 0, 1, 0, 156, 0, 0, 9, 100, 1, 0, 0, 0, 1, 156, 0,
@@ -24,9 +29,10 @@ PROGMEM prog_uchar animation1[] = { 86, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 255, 0, 0, 1, 1, 255, 0, 0, 1,
         1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 255, 0, 0, 69 };
 
-unsigned char iValueAxisData[16][201];
 
-signed int iFunctions[10][3];
+unsigned char iValueAxisData[COUNT_OF_VALUE_AXES_IN_ANIMATION][VALUES_IN_RANGE_FROM_MINUS_100_TO_PLUS_100];
+
+signed int iFunctions[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
 
 int animationByteOffset;
 int timeAxisNum;
@@ -325,15 +331,20 @@ void readValueAxis(unsigned int valueAxisIndex) {
     Serial.print("\n");
 
     valueAxisOffset = -valueAxisLowValue;
+    Serial.print("valueAxisOffset: ");
+    Serial.print(valueAxisOffset, DEC);
+    Serial.print("\n");
 
     for (int frame = valueAxisLowValue; frame <= valueAxisHighValue;
             frame++) {
-        //  Serial.print(frame, DEC);
-        //   Serial.print("\n");
+        Serial.print(frame, DEC);
+        Serial.print("\n");
         int ledNum = INITIAL_LED;
         for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
             char ledNumber = readByteUnsignedChar(&animationByteOffset);
-            // Serial.print(ledNumber, DEC);
+            Serial.print("ledNumber:");
+            Serial.print(ledNumber, DEC);
+            Serial.print("\n");
 
             unsigned char frameType = readByteUnsignedChar(
                     &animationByteOffset);
@@ -342,11 +353,11 @@ void readValueAxis(unsigned int valueAxisIndex) {
             case FT_FUNCTION:
                 iValueAxisData[ledIndex][valueAxisOffset + frame] =
                         readByteUnsignedChar(&animationByteOffset);
-                //if(iValueAxisData[i][iValueAxisOffset + frame] != 0) {
-                //  Serial.print("function is ");
-                //  Serial.print(iValueAxisData[i][iValueAxisOffset + frame], DEC);
-                //  Serial.print("\n");
-                // }
+                if(iValueAxisData[ledIndex][valueAxisOffset + frame] != 0) {
+                    Serial.print("function is ");
+                    Serial.print(iValueAxisData[ledIndex][valueAxisOffset + frame], DEC);
+                    Serial.print("\n");
+                }
                 break;
             case FT_LINKED:
                 iValueAxisData[ledIndex][valueAxisOffset + frame] = 255;
