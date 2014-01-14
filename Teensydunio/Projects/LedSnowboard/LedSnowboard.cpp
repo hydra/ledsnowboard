@@ -52,7 +52,7 @@ void setup() {
 
 void loop() {
     Serial.print("Loop\n");
-    readAxisData(timeAxisNum);
+    animate();
 
     // if (readByteUnsignedChar(&iCounter) != TERMINATING_BYTE) {
     //throw new InvalidAnimationException("No terminating byte");

@@ -30,21 +30,21 @@ signed int iFunctions[10][3];
 
 int animationByteOffset;
 int timeAxisNum;
-int iNumValueAxes;
-int numLeds;
+int valueAxisCount;
+int ledCount;
 
-int iTopOfTimeAxis;
+int animationByteOffsetOfFirstValueAxis;
 
 int iNumFunctions;
 
-signed char iValueAxisLowValue;
-signed char iValueAxisHighValue;
-signed char iValueAxisZeroValue;
+signed char valueAxisLowValue;
+signed char valueAxisHighValue;
+signed char valueAxisZeroValue;
 
-int iValueAxisOffset;
+int valueAxisOffset;
 
-int iTimeAxisLowValue;
-int iTimeAxisHighValue;
+int timeAxisLowValue;
+int timeAxisHighValue;
 int iTimeAxisSpeed;
 
 bool iBackgroundColour;
@@ -74,9 +74,9 @@ void readAnimationDetails() {
     unsigned char numLedsHigh = readByteUnsignedChar(&animationByteOffset);
     unsigned char numLedsLow = readByteUnsignedChar(&animationByteOffset);
 
-    numLeds = numLedsHigh |= numLedsLow << 8;
+    ledCount = numLedsHigh |= numLedsLow << 8;
     Serial.print("led count is ");
-    Serial.print(numLeds, DEC);
+    Serial.print(ledCount, DEC);
     Serial.print("\n");
 
     iNumFunctions = readByteUnsignedChar(&animationByteOffset);
@@ -87,14 +87,14 @@ void readAnimationDetails() {
         readFunctionData(i);
     }
 
-    iNumValueAxes = readByteUnsignedChar(&animationByteOffset);
+    valueAxisCount = readByteUnsignedChar(&animationByteOffset);
     Serial.print("value axis count is ");
-    Serial.print(iNumValueAxes, DEC);
+    Serial.print(valueAxisCount, DEC);
     Serial.print("\n");
 
     readTimeAxis();
 
-    for (signed int valueAxisIndex = 0; valueAxisIndex < iNumValueAxes;
+    for (signed int valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
             valueAxisIndex++) {
         readValueAxis(valueAxisIndex);
     }
@@ -181,14 +181,14 @@ void readAndSetColour(int ledNum) {
         int highValue = 0;
         if (accelerometerValue < 0) {
             initialValue = accelerometerValue;
-            highValue = iValueAxisZeroValue;
+            highValue = valueAxisZeroValue;
         } else if (accelerometerValue > 0) {
-            initialValue = iValueAxisZeroValue + 1;
+            initialValue = valueAxisZeroValue + 1;
             highValue = accelerometerValue + 1;
         }
 
         for (int frame = initialValue; frame < highValue; frame++) {
-            int functionNum = iValueAxisData[ledNum][frame + iValueAxisOffset];
+            int functionNum = iValueAxisData[ledNum][frame + valueAxisOffset];
             //Serial.print(functionNum, DEC);
             //Serial.print(":");
             redIncrement += iFunctions[functionNum][0];
@@ -279,13 +279,13 @@ void beginReadAxis(void) {
 void readTimeAxis(void) {
     beginReadAxis();
 
-    iTimeAxisLowValue = readByteSignedChar(&animationByteOffset);
+    timeAxisLowValue = readByteSignedChar(&animationByteOffset);
     Serial.print("time axis low value : ");
-    Serial.print(iTimeAxisLowValue, DEC);
+    Serial.print(timeAxisLowValue, DEC);
     Serial.print("\n");
-    iTimeAxisHighValue = readByteSignedChar(&animationByteOffset);
+    timeAxisHighValue = readByteSignedChar(&animationByteOffset);
     Serial.print("time axis high value : ");
-    Serial.print(iTimeAxisHighValue, DEC);
+    Serial.print(timeAxisHighValue, DEC);
     Serial.print("\n");
     iTimeAxisSpeed = readByteSignedChar(&animationByteOffset);
     Serial.print("time axis speed : ");
@@ -308,39 +308,39 @@ void readTimeAxis(void) {
     }
 }
 
-void readValueAxis(signed int valueAxisIndex) {
+void readValueAxis(unsigned int valueAxisIndex) {
     beginReadAxis();
 
-    iValueAxisLowValue = readByteSignedChar(&animationByteOffset);
+    valueAxisLowValue = readByteSignedChar(&animationByteOffset);
     Serial.print("value axis low value : ");
-    Serial.print(iValueAxisLowValue, DEC);
+    Serial.print(valueAxisLowValue, DEC);
     Serial.print("\n");
-    iValueAxisHighValue = readByteSignedChar(&animationByteOffset);
+    valueAxisHighValue = readByteSignedChar(&animationByteOffset);
     Serial.print("value axis high value : ");
-    Serial.print(iValueAxisHighValue, DEC);
+    Serial.print(valueAxisHighValue, DEC);
     Serial.print("\n");
-    iValueAxisZeroValue = readByteSignedChar(&animationByteOffset);
+    valueAxisZeroValue = readByteSignedChar(&animationByteOffset);
     Serial.print("value axis zero value : ");
-    Serial.print(iValueAxisZeroValue, DEC);
+    Serial.print(valueAxisZeroValue, DEC);
     Serial.print("\n");
 
-    iValueAxisOffset = -iValueAxisLowValue;
+    valueAxisOffset = -valueAxisLowValue;
 
-    for (int frame = iValueAxisLowValue; frame <= iValueAxisHighValue;
+    for (int frame = valueAxisLowValue; frame <= valueAxisHighValue;
             frame++) {
         //  Serial.print(frame, DEC);
         //   Serial.print("\n");
         int ledNum = INITIAL_LED;
-        for (int i = 0; i < numLeds; i++) {
-            char ledNum = readByteUnsignedChar(&animationByteOffset); // led number
-            //   Serial.print(ledNum, DEC);
+        for (int ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+            char ledNumber = readByteUnsignedChar(&animationByteOffset);
+            // Serial.print(ledNumber, DEC);
 
             unsigned char frameType = readByteUnsignedChar(
                     &animationByteOffset);
 
             switch (frameType) {
             case FT_FUNCTION:
-                iValueAxisData[i][iValueAxisOffset + frame] =
+                iValueAxisData[ledIndex][valueAxisOffset + frame] =
                         readByteUnsignedChar(&animationByteOffset);
                 //if(iValueAxisData[i][iValueAxisOffset + frame] != 0) {
                 //  Serial.print("function is ");
@@ -349,48 +349,56 @@ void readValueAxis(signed int valueAxisIndex) {
                 // }
                 break;
             case FT_LINKED:
-                iValueAxisData[i][iValueAxisOffset + frame] = 255;
+                iValueAxisData[ledIndex][valueAxisOffset + frame] = 255;
                 break;
             }
         }
     }
 }
 
-void readAxisData(int number) {
+void animate() {
+    animationByteOffsetOfFirstValueAxis = animationByteOffset;
+    readAxisData();
+    animationByteOffset = animationByteOffsetOfFirstValueAxis;
+}
+
+void readAxisData(void) {
     Serial.print("readAxisData");
     Serial.print("\n");
 
-    iTopOfTimeAxis = animationByteOffset;
-    for (int frame = iTimeAxisLowValue; frame <= iTimeAxisHighValue; frame++) {
-        // Serial.print(frame, DEC);
+    for (unsigned int frameIndex = timeAxisLowValue; frameIndex <= timeAxisHighValue; frameIndex++) {
+
+        // Serial.print("Processing frame: ");
+        // Serial.print(frameIndex, DEC);
         // Serial.print("\n");
-        //int ledNum = kInitialLed;
-        for (int i = 0; i < numLeds; i++) {
-            int ledNum = readByteUnsignedChar(&animationByteOffset); // led number
-            //Serial.print(ledNum, DEC);
-            //Serial.print("\n");
+        processFrame(frameIndex);
 
-            unsigned char frameType = readByteUnsignedChar(
-                    &animationByteOffset);
+        //Serial.print("SHOW!");
+        leds.show();
 
-            switch (frameType) {
+        delayMicroseconds(iTimeAxisSpeed * MICROSECONDS_IN_A_MILLISECOND);
+    }
+}
+
+void processFrame(unsigned int frameIndex) {
+    //int ledNum = kInitialLed;
+    for (int i = 0; i < ledCount; i++) {
+        int ledNum = readByteUnsignedChar(&animationByteOffset); // led number
+        //Serial.print(ledNum, DEC);
+        //Serial.print("\n");
+
+        unsigned char frameType = readByteUnsignedChar(
+                &animationByteOffset);
+
+        switch (frameType) {
             case FT_FUNCTION:
                 //readFunctionAndSetColour();
                 break;
             case FT_COLOUR:
                 readAndSetColour(i);
                 break;
-            }
         }
-
-        //Serial.print("SHOW!");
-        leds.show();
-        //Serial.print("DONE!");
-
-        delayMicroseconds(iTimeAxisSpeed * MICROSECONDS_IN_A_MILLISECOND);
     }
-
-    animationByteOffset = iTopOfTimeAxis;
 }
 
 unsigned char readByteUnsignedChar(int* aPosition) {
