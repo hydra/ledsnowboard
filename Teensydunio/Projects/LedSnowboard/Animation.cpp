@@ -13,27 +13,15 @@
 
 #include "Animation.h"
 
+#include "AnimationData.h"
 
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
 
-#define VALUES_IN_RANGE_FROM_MINUS_1_TO_PLUS_1 3
-#define MAX_VALUES_IN_RANGE_USED_BY_ANIMATION VALUES_IN_RANGE_FROM_MINUS_1_TO_PLUS_1
-
-#define COUNT_OF_LEDS_IN_ANIMATION 1
-#define COUNT_OF_FUNCTIONS_IN_ANIMATION 3
-
 unsigned char iValueAxisData[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
 signed int iFunctions[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
-
-PROGMEM prog_uchar animation1[] = { 86, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 1, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 1, 0, 255, 255, 0, 0,
-        0, 0, 255, 255, 0, 0, 1, 0, 156, 0, 0, 9, 100, 1, 0, 0, 0, 1, 156, 0,
-        255, 1, 0, 1, 2, 34, 1, 1, 3, 1, 2, 34, 2, 34, 1, 1, 255, 0, 0, 1, 1, 0,
-        0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 255, 0, 0, 1, 1, 255, 0, 0, 1,
-        1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 255, 0, 0, 69 };
 
 int animationByteOffset;
 int timeAxisNum;
@@ -60,16 +48,16 @@ unsigned char iBackgroundColourGreen;
 unsigned char iBackgroundColourBlue;
 
 void initializeFunctionData(unsigned int functionCount, unsigned int colorComponentCount) {
-    for (int i = 0; i < functionCount; i++) {
-        for (int j = 0; j < colorComponentCount; j++) {
+    for (unsigned int i = 0; i < functionCount; i++) {
+        for (unsigned int j = 0; j < colorComponentCount; j++) {
             iFunctions[i][j] = 0;
         }
     }
 }
 
 void initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesInRange) {
-    for (int i = 0; i < ledsInAnimation; i++) {
-        for (int j = 0; j < valuesInRange; j++) {
+    for (unsigned int i = 0; i < ledsInAnimation; i++) {
+        for (unsigned int j = 0; j < valuesInRange; j++) {
             iValueAxisData[i][j] = 0;
         }
     }
@@ -427,9 +415,9 @@ void processFrame(unsigned int frameIndex) {
 }
 
 unsigned char readByteUnsignedChar(int* aPosition) {
-    unsigned char readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
+    unsigned char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
     if (readByte == ESCAPE_BYTE) {
-        readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
+        readByte = pgm_read_byte_near(animationData + (*(aPosition))++);
         readByte = readByte ^ XOR_BYTE;
     }
 
@@ -437,9 +425,9 @@ unsigned char readByteUnsignedChar(int* aPosition) {
 }
 
 signed char readByteSignedChar(int* aPosition) {
-    signed char readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
+    signed char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
     if (readByte == ESCAPE_BYTE) {
-        readByte = pgm_read_byte_near(animation1 + (*(aPosition))++);
+        readByte = pgm_read_byte_near(animationData + (*(aPosition))++);
         readByte = readByte ^ XOR_BYTE;
     }
 
