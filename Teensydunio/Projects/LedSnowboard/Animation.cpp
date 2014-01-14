@@ -18,9 +18,15 @@ extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
-#define VALUES_IN_RANGE_FROM_MINUS_100_TO_PLUS_100 201
-#define COUNT_OF_VALUE_AXES_IN_ANIMATION 16
+
+#define VALUES_IN_RANGE_FROM_MINUS_1_TO_PLUS_1 3
+#define MAX_VALUES_IN_RANGE_USED_BY_ANIMATION VALUES_IN_RANGE_FROM_MINUS_1_TO_PLUS_1
+
+#define COUNT_OF_LEDS_IN_ANIMATION 1
 #define COUNT_OF_FUNCTIONS_IN_ANIMATION 3
+
+unsigned char iValueAxisData[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
+signed int iFunctions[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
 
 PROGMEM prog_uchar animation1[] = { 86, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 1, 0, 255, 255, 0, 0,
@@ -28,11 +34,6 @@ PROGMEM prog_uchar animation1[] = { 86, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         255, 1, 0, 1, 2, 34, 1, 1, 3, 1, 2, 34, 2, 34, 1, 1, 255, 0, 0, 1, 1, 0,
         0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 255, 0, 0, 1, 1, 255, 0, 0, 1,
         1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 255, 0, 0, 69 };
-
-
-unsigned char iValueAxisData[COUNT_OF_VALUE_AXES_IN_ANIMATION][VALUES_IN_RANGE_FROM_MINUS_100_TO_PLUS_100];
-
-signed int iFunctions[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
 
 int animationByteOffset;
 int timeAxisNum;
@@ -58,20 +59,28 @@ unsigned char iBackgroundColourRed;
 unsigned char iBackgroundColourGreen;
 unsigned char iBackgroundColourBlue;
 
-void readAnimationDetails() {
-    timeAxisNum = -1;
-
-    for (int i = 0; i < 16; i++) {
-        for (int j = 0; j < 201; j++) {
-            iValueAxisData[i][j] = 0;
-        }
-    }
-
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 3; j++) {
+void initializeFunctionData(unsigned int functionCount, unsigned int colorComponentCount) {
+    for (int i = 0; i < functionCount; i++) {
+        for (int j = 0; j < colorComponentCount; j++) {
             iFunctions[i][j] = 0;
         }
     }
+}
+
+void initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesInRange) {
+    for (int i = 0; i < ledsInAnimation; i++) {
+        for (int j = 0; j < valuesInRange; j++) {
+            iValueAxisData[i][j] = 0;
+        }
+    }
+}
+
+
+void readAnimationDetails() {
+    timeAxisNum = -1;
+
+    initializeValueAxisData(COUNT_OF_LEDS_IN_ANIMATION, MAX_VALUES_IN_RANGE_USED_BY_ANIMATION);
+    initializeFunctionData(COUNT_OF_FUNCTIONS_IN_ANIMATION, COLOR_COMPONENT_COUNT);
 
     if (readByteUnsignedChar(&animationByteOffset) != HEADER_BYTE) {
         //throw new InvalidAnimationException("No header byte");
@@ -349,18 +358,23 @@ void readValueAxis(unsigned int valueAxisIndex) {
             unsigned char frameType = readByteUnsignedChar(
                     &animationByteOffset);
 
+            int valueAxisIndex = valueAxisOffset + frame;
+            Serial.print("valueAxisIndex:");
+            Serial.print(valueAxisIndex, DEC);
+            Serial.print("\n");
+
             switch (frameType) {
             case FT_FUNCTION:
-                iValueAxisData[ledIndex][valueAxisOffset + frame] =
+                iValueAxisData[ledIndex][valueAxisIndex] =
                         readByteUnsignedChar(&animationByteOffset);
-                if(iValueAxisData[ledIndex][valueAxisOffset + frame] != 0) {
+                if(iValueAxisData[ledIndex][valueAxisIndex] != 0) {
                     Serial.print("function is ");
-                    Serial.print(iValueAxisData[ledIndex][valueAxisOffset + frame], DEC);
+                    Serial.print(iValueAxisData[ledIndex][valueAxisIndex], DEC);
                     Serial.print("\n");
                 }
                 break;
             case FT_LINKED:
-                iValueAxisData[ledIndex][valueAxisOffset + frame] = 255;
+                iValueAxisData[ledIndex][valueAxisIndex] = 255;
                 break;
             }
         }
