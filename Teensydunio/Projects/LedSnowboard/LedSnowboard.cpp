@@ -14,8 +14,10 @@
 #include "Scheduling/ScheduledAction.h"
 
 ScheduledAction statusLedAction;
+ScheduledAction animationFrameAdvanceAction;
 StatusLed statusLed(LED_PIN);
 AccelGyro accelGyro(statusLed);
+Animator animator;
 
 
 // CRUFT BELOW HERE
@@ -27,8 +29,6 @@ DMAMEM int displayMemory[LEDS_PER_STRIP * MEMORY_NEEDED_FOR_EACH_LED];
 int drawingMemory[LEDS_PER_STRIP * MEMORY_NEEDED_FOR_EACH_LED];
 
 const int config = WS2811_GRB | WS2811_800kHz;
-
-extern int timeAxisNum;
 
 OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, drawingMemory, config);
 
@@ -50,13 +50,16 @@ void setup() {
     // delay so that at least some serial output can be seen after accelerometer is configured.
     delayMicroseconds(MICROSECONDS_IN_A_SECOND * 1);
 
-    readAnimationDetails();
+    animator.readAnimationDetails();
 
     leds.begin();
 
     statusLedAction.setDelayMillis(500L);
     statusLedAction.reset();
-    
+
+    animationFrameAdvanceAction.setDelayMillis(animator.iTimeAxisSpeed);
+    animationFrameAdvanceAction.reset();
+
     Serial.print("FINISHED SETUP");
     Serial.print("\n");
 }
@@ -69,12 +72,17 @@ void updateCpuActivityLed(void) {
   statusLed.toggle();
 }
 
-extern int iTimeAxisSpeed;
+void updateAnimation() {
+    if (!animationFrameAdvanceAction.isActionDue()) {
+        return;
+    }
+
+    animator.renderNextFrame();
+    leds.show();
+}
 
 void loop() {
     updateCpuActivityLed();
-    Serial.print("Loop\n");
-    renderNextFrame();
-    leds.show();
-    delayMicroseconds(iTimeAxisSpeed * MICROSECONDS_IN_A_MILLISECOND);
+    updateAnimation();
 }
+

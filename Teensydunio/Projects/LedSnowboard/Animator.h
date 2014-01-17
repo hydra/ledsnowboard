@@ -5,8 +5,12 @@
  *      Author: hydra
  */
 
-#ifndef ANIMATION_H_
-#define ANIMATION_H_
+#ifndef ANIMATOR_H_
+#define ANIMATOR_H_
+
+#include "Animations.h"
+
+#define COLOR_COMPONENT_COUNT 3 // R,G and B
 
 struct valueAxis {
     int lowValue;
@@ -26,14 +30,51 @@ struct valueAxis {
 #define ESCAPE_BYTE 0x02
 #define XOR_BYTE 0x20
 
-void readAnimationDetails(void);
-void renderNextFrame(void);
+class Animator {
+public:
+    void readAnimationDetails(void);
+    void renderNextFrame(void);
 
-unsigned char readByteUnsignedChar(int* aPosition);
-signed char readByteSignedChar(int* aPosition);
-void readFunctionData(int num);
-void readTimeAxis(void);
-void readValueAxis(unsigned int valueAxisIndex);
-void processFrame(unsigned int frameIndex);
+    int iTimeAxisSpeed;
+    
+private:
+    int animationByteOffset;
+    int timeAxisNum;
+    int valueAxisCount;
+    int ledCount;
 
-#endif /* ANIMATION_H_ */
+    int animationByteOffsetOfFirstFrame;
+
+    int iNumFunctions;
+
+    signed char valueAxisLowValue;
+    signed char valueAxisHighValue;
+    signed char valueAxisZeroValue;
+
+    int valueAxisOffset;
+
+    int timeAxisLowValue;
+    int timeAxisHighValue;
+
+    bool iBackgroundColour;
+    unsigned char iBackgroundColourRed;
+    unsigned char iBackgroundColourGreen;
+    unsigned char iBackgroundColourBlue;
+
+    unsigned char iValueAxisData[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
+    signed int iFunctions[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
+
+    unsigned int frameIndex;
+
+    void initializeFunctionData(unsigned int functionCount, unsigned int colorComponentCount);
+    void initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesInRange);
+    
+    void readAndSetColour(int ledNum);
+    void readFunctionData(int num);
+    void readTimeAxis(void);
+    void readValueAxis(unsigned int valueAxisIndex);
+    void processFrame(unsigned int frameIndex);
+    void beginReadAxis(void);
+};
+
+#endif /* ANIMATOR_H_ */

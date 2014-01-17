@@ -18,36 +18,29 @@
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
-#define COLOR_COMPONENT_COUNT 3 // R,G and B
+unsigned char readByteUnsignedChar(int* aPosition) {
+    unsigned char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
+    if (readByte == ESCAPE_BYTE) {
+        readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
+        readByte = readByte ^ XOR_BYTE;
+    }
 
-unsigned char iValueAxisData[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
-signed int iFunctions[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
+    return readByte;
+}
 
-int animationByteOffset;
-int timeAxisNum;
-int valueAxisCount;
-int ledCount;
+signed char readByteSignedChar(int* aPosition) {
+    signed char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
+    if (readByte == ESCAPE_BYTE) {
+        readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
+        readByte = readByte ^ XOR_BYTE;
+    }
 
-int animationByteOffsetOfFirstFrame;
+    return readByte;
+}
 
-int iNumFunctions;
 
-signed char valueAxisLowValue;
-signed char valueAxisHighValue;
-signed char valueAxisZeroValue;
 
-int valueAxisOffset;
-
-int timeAxisLowValue;
-int timeAxisHighValue;
-int iTimeAxisSpeed;
-
-bool iBackgroundColour;
-unsigned char iBackgroundColourRed;
-unsigned char iBackgroundColourGreen;
-unsigned char iBackgroundColourBlue;
-
-void initializeFunctionData(unsigned int functionCount, unsigned int colorComponentCount) {
+void Animator::initializeFunctionData(unsigned int functionCount, unsigned int colorComponentCount) {
     for (unsigned int i = 0; i < functionCount; i++) {
         for (unsigned int j = 0; j < colorComponentCount; j++) {
             iFunctions[i][j] = 0;
@@ -55,7 +48,7 @@ void initializeFunctionData(unsigned int functionCount, unsigned int colorCompon
     }
 }
 
-void initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesInRange) {
+void Animator::initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesInRange) {
     for (unsigned int i = 0; i < ledsInAnimation; i++) {
         for (unsigned int j = 0; j < valuesInRange; j++) {
             iValueAxisData[i][j] = 0;
@@ -63,10 +56,8 @@ void initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesIn
     }
 }
 
-unsigned int frameIndex;
 
-
-void readAnimationDetails() {
+void Animator::readAnimationDetails() {
     timeAxisNum = -1;
 
     initializeValueAxisData(COUNT_OF_LEDS_IN_ANIMATION, MAX_VALUES_IN_RANGE_USED_BY_ANIMATION);
@@ -109,7 +100,7 @@ void readAnimationDetails() {
     frameIndex = timeAxisLowValue;
 }
 
-void readFunctionData(int num) {
+void Animator::readFunctionData(int num) {
     unsigned char red1 = readByteUnsignedChar(&animationByteOffset);
     unsigned char red2 = readByteUnsignedChar(&animationByteOffset);
     unsigned char red3 = readByteUnsignedChar(&animationByteOffset);
@@ -161,7 +152,7 @@ void readFunctionData(int num) {
     iFunctions[num][2] = blueIncrement;
 }
 
-void readAndSetColour(int ledNum) {
+void Animator::readAndSetColour(int ledNum) {
     Serial.print(ledNum, DEC);
     Serial.print(" : ");
 
@@ -279,13 +270,13 @@ void readAndSetColour(int ledNum) {
     leds.setPixel(ledNum, red, green, blue);
 }
 
-void beginReadAxis(void) {
+void Animator::beginReadAxis(void) {
     int axisType = readByteUnsignedChar(&animationByteOffset);
     int priority = readByteUnsignedChar(&animationByteOffset);
     boolean opaque = (boolean) readByteUnsignedChar(&animationByteOffset);
 }
 
-void readTimeAxis(void) {
+void Animator::readTimeAxis(void) {
     beginReadAxis();
 
     timeAxisLowValue = readByteSignedChar(&animationByteOffset);
@@ -317,7 +308,7 @@ void readTimeAxis(void) {
     }
 }
 
-void readValueAxis(unsigned int valueAxisIndex) {
+void Animator::readValueAxis(unsigned int valueAxisIndex) {
     beginReadAxis();
 
     valueAxisLowValue = readByteSignedChar(&animationByteOffset);
@@ -375,7 +366,7 @@ void readValueAxis(unsigned int valueAxisIndex) {
     }
 }
 
-void renderNextFrame() {
+void Animator::renderNextFrame() {
     // Serial.print("Processing frame: ");
     // Serial.print(frameIndex, DEC);
     // Serial.print("\n");
@@ -394,7 +385,7 @@ void renderNextFrame() {
     }
 }
 
-void processFrame(unsigned int frameIndex) {
+void Animator::processFrame(unsigned int frameIndex) {
     //int ledNum = kInitialLed;
     for (int i = 0; i < ledCount; i++) {
         int ledNum = readByteUnsignedChar(&animationByteOffset); // led number
@@ -415,22 +406,3 @@ void processFrame(unsigned int frameIndex) {
     }
 }
 
-unsigned char readByteUnsignedChar(int* aPosition) {
-    unsigned char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
-    if (readByte == ESCAPE_BYTE) {
-        readByte = pgm_read_byte_near(animationData + (*(aPosition))++);
-        readByte = readByte ^ XOR_BYTE;
-    }
-
-    return readByte;
-}
-
-signed char readByteSignedChar(int* aPosition) {
-    signed char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
-    if (readByte == ESCAPE_BYTE) {
-        readByte = pgm_read_byte_near(animationData + (*(aPosition))++);
-        readByte = readByte ^ XOR_BYTE;
-    }
-
-    return readByte;
-}
