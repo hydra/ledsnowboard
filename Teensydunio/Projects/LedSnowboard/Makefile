@@ -37,6 +37,7 @@ LIBRARY_FLAGS = \
     -I$(LIBRARYPATH)/Wire \
     -I../../Libraries/I2Cdev \
     -I../../Libraries/MPU6050 \
+    -I../../Libraries/SdFat \
 
 #************************************************************************
 # Settings below this point usually do not need to be edited
@@ -110,6 +111,7 @@ MODULES = \
 PROJECT_SPECIFIC_LIBRARIES = \
         ../../Libraries/I2Cdev/I2Cdev.cpp \
         ../../Libraries/MPU6050/MPU6050.cpp \
+        $(wildcard ../../Libraries/SdFat/*.cpp) \
 
 C_FILES := $(wildcard *.c)
 CPP_FILES := $(wildcard *.cpp)

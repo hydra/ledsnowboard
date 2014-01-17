@@ -153,20 +153,22 @@ void Animator::readFunctionData(int num) {
 }
 
 void Animator::readAndSetColour(int ledNum) {
-    Serial.print(ledNum, DEC);
-    Serial.print(" : ");
-
+    
     unsigned char red = readByteUnsignedChar(&animationByteOffset);
     unsigned char green = readByteUnsignedChar(&animationByteOffset);
     unsigned char blue = readByteUnsignedChar(&animationByteOffset);
 
+#ifdef DEBUG_ANIMATOR_CODEC
+    Serial.print(ledNum, DEC);
+    Serial.print(" : ");
     Serial.print(red, HEX);
     Serial.print(" ");
     Serial.print(green, HEX);
     Serial.print(" ");
     Serial.print(blue, HEX);
     Serial.print("\n");
-
+#endif
+    
     if (iBackgroundColour
             && (red != iBackgroundColourRed || green != iBackgroundColourGreen
                     || blue != iBackgroundColourBlue)) {
@@ -196,13 +198,15 @@ void Animator::readAndSetColour(int ledNum) {
             blueIncrement += iFunctions[functionNum][2];
         }
 
-        /*Serial.print(redIncrement, DEC);
-         Serial.print(" ");
-         Serial.print(greenIncrement, DEC);
-         Serial.print(" ");
-         Serial.print(blueIncrement, DEC);
-         Serial.print("\n");*/
-
+#ifdef DEBUG_ANIMATOR_CODEC
+        Serial.print(redIncrement, DEC);
+        Serial.print(" ");
+        Serial.print(greenIncrement, DEC);
+        Serial.print(" ");
+        Serial.print(blueIncrement, DEC);
+        Serial.print("\n");*/
+#endif
+        
         if (redIncrement < -65536) {
             redIncrement = 0;
         }
