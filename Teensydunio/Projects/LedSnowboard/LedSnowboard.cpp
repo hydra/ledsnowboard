@@ -9,8 +9,11 @@
 
 #include "StatusLed.h"
 #include "AccelGyro.h"
-#include "Animation.h"
+#include "Animator.h"
 
+#include "Scheduling/ScheduledAction.h"
+
+ScheduledAction statusLedAction;
 StatusLed statusLed(LED_PIN);
 AccelGyro accelGyro(statusLed);
 
@@ -51,11 +54,23 @@ void setup() {
 
     leds.begin();
 
+    statusLedAction.setDelayMillis(500L);
+    statusLedAction.reset();
+    
     Serial.print("FINISHED SETUP");
     Serial.print("\n");
 }
 
+void updateCpuActivityLed(void) {
+  if (!statusLedAction.isActionDue()) {
+    return;
+  }
+  
+  statusLed.toggle();
+}
+
 void loop() {
+    updateCpuActivityLed();
     Serial.print("Loop\n");
     animate();
 

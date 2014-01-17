@@ -11,9 +11,9 @@
 #include "AccelGyro.h"
 #include "Time.h"
 
-#include "Animation.h"
+#include "Animator.h"
 
-#include "AnimationData.h"
+#include "Animations.h"
 
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;

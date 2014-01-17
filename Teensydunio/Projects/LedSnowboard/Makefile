@@ -104,6 +104,9 @@ STANDARD_LIBRARIES = \
         $(LIBRARYPATH)/OctoWS2811/OctoWS2811.cpp \
         $(LIBRARYPATH)/Wire/Wire.cpp
 
+MODULES = \
+        $(wildcard Scheduling/*.cpp)
+
 PROJECT_SPECIFIC_LIBRARIES = \
         ../../Libraries/I2Cdev/I2Cdev.cpp \
         ../../Libraries/MPU6050/MPU6050.cpp \
@@ -113,6 +116,7 @@ CPP_FILES := $(wildcard *.cpp)
 OBJS := \
         $(C_FILES:.c=.o) \
         $(CPP_FILES:.cpp=.o) \
+        $(MODULES:.cpp=.o) \
         $(addprefix $(COREPATH)/, $(SRC_TEENSY_CPP:.cpp=.o)) \
         $(addprefix $(COREPATH)/, $(SRC_TEENSY_C:.c=.o)) \
         $(STANDARD_LIBRARIES:.cpp=.o) \
@@ -147,6 +151,6 @@ endif
 -include $(OBJS:.o=.d)
 
 clean:
-	rm -f *.o *.d $(COREPATH)/*.o $(COREPATH)/*.d $(LIBRARYPATH)/*/*.o $(LIBRARYPATH)/*/*.d ../../Libraries/*/*.o ../../Libraries/*/*.d $(TARGET).elf $(TARGET).hex
+	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET).hex.elf $(TARGET).elf $(TARGET).hex
 
 
