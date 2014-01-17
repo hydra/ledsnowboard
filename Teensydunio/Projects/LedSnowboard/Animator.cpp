@@ -28,7 +28,7 @@ int timeAxisNum;
 int valueAxisCount;
 int ledCount;
 
-int animationByteOffsetOfFirstValueAxis;
+int animationByteOffsetOfFirstFrame;
 
 int iNumFunctions;
 
@@ -63,6 +63,8 @@ void initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesIn
     }
 }
 
+unsigned int frameIndex;
+
 
 void readAnimationDetails() {
     timeAxisNum = -1;
@@ -96,11 +98,15 @@ void readAnimationDetails() {
     Serial.print("\n");
 
     readTimeAxis();
-
+    
     for (signed int valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
             valueAxisIndex++) {
         readValueAxis(valueAxisIndex);
     }
+    
+    animationByteOffsetOfFirstFrame = animationByteOffset;
+
+    frameIndex = timeAxisLowValue;
 }
 
 void readFunctionData(int num) {
@@ -369,27 +375,22 @@ void readValueAxis(unsigned int valueAxisIndex) {
     }
 }
 
-void animate() {
-    animationByteOffsetOfFirstValueAxis = animationByteOffset;
-    readAxisData();
-    animationByteOffset = animationByteOffsetOfFirstValueAxis;
-}
+void renderNextFrame() {
+    // Serial.print("Processing frame: ");
+    // Serial.print(frameIndex, DEC);
+    // Serial.print("\n");
+    processFrame(frameIndex);
 
-void readAxisData(void) {
-    Serial.print("readAxisData");
-    Serial.print("\n");
-
-    for (unsigned int frameIndex = timeAxisLowValue; frameIndex <= timeAxisHighValue; frameIndex++) {
-
-        // Serial.print("Processing frame: ");
-        // Serial.print(frameIndex, DEC);
-        // Serial.print("\n");
-        processFrame(frameIndex);
-
-        //Serial.print("SHOW!");
-        leds.show();
-
-        delayMicroseconds(iTimeAxisSpeed * MICROSECONDS_IN_A_MILLISECOND);
+    frameIndex++;
+    
+    if (frameIndex > timeAxisHighValue) {
+        // if (readByteUnsignedChar(&iCounter) != TERMINATING_BYTE) {
+        //throw new InvalidAnimationException("No terminating byte");
+        // }
+        
+        // rewind after last frame
+        frameIndex = timeAxisLowValue;
+        animationByteOffset = animationByteOffsetOfFirstFrame;
     }
 }
 

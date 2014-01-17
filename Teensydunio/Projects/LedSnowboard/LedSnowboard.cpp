@@ -69,12 +69,12 @@ void updateCpuActivityLed(void) {
   statusLed.toggle();
 }
 
+extern int iTimeAxisSpeed;
+
 void loop() {
     updateCpuActivityLed();
     Serial.print("Loop\n");
-    animate();
-
-    // if (readByteUnsignedChar(&iCounter) != TERMINATING_BYTE) {
-    //throw new InvalidAnimationException("No terminating byte");
-    // }
+    renderNextFrame();
+    leds.show();
+    delayMicroseconds(iTimeAxisSpeed * MICROSECONDS_IN_A_MILLISECOND);
 }

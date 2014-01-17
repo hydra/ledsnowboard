@@ -27,12 +27,11 @@ struct valueAxis {
 #define XOR_BYTE 0x20
 
 void readAnimationDetails(void);
-void animate(void);
+void renderNextFrame(void);
 
 unsigned char readByteUnsignedChar(int* aPosition);
 signed char readByteSignedChar(int* aPosition);
 void readFunctionData(int num);
-void readAxisData(void);
 void readTimeAxis(void);
 void readValueAxis(unsigned int valueAxisIndex);
 void processFrame(unsigned int frameIndex);
