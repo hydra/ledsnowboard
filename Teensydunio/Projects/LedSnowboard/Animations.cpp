@@ -4512,3 +4512,7 @@ const unsigned char animationData[] = {
 117,1,255,0,0,69};
 
 #endif
+
+uint32_t getAnimationSizeInBytes(void) {
+    return sizeof(animationData);
+}

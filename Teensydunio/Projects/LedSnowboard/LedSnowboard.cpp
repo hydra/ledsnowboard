@@ -10,6 +10,7 @@
 #include "StatusLed.h"
 #include "AccelGyro.h"
 #include "Animator.h"
+#include "Animations.h"
 
 #include "Scheduling/ScheduledAction.h"
 
@@ -35,6 +36,7 @@ ScheduledAction serialStatusAction;
 
 bool cardPresence = false;
 SdFat sd;
+SdFile myFile;
 
 #define LEDS_PER_STRIP 2
 #define MEMORY_NEEDED_FOR_EACH_LED 6
@@ -110,7 +112,23 @@ void setup() {
     Serial.println("Files found in all dirs:");
     sd.ls(LS_R);
     
+#ifdef WRITE_ANIMATION_TO_SDCARD
+    // delete possible existing file
+    sd.remove("TEST1.ANI");
+    
+    // open the file for write at end like the Native SD library
+    if (!myFile.open("TEST1.ANI", O_WRONLY | O_CREAT)) {
+      sd.errorHalt("opening TEST1.ANI for write failed");
+    }
+    Serial.print("Writing animation, bytes: ");
+    Serial.print(getAnimationSizeInBytes(), DEC);
+    
+    myFile.write(animationData, getAnimationSizeInBytes());
+    myFile.close();
+    
+    Serial.print(" Done!");
     Serial.println();
+#endif
     
     sdCardStatusAction.setDelayMillis(1000L);
     sdCardStatusAction.reset();
