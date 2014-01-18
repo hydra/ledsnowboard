@@ -3,6 +3,8 @@
 
 #include "Animations.h"
 
+#ifdef ANIMATION_IN_MEMORY
+
 #ifdef USE_ANIMATION_1
 const unsigned char animationData[] = { 86, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 1, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 1, 0, 255, 255, 0, 0,
@@ -4514,5 +4516,8 @@ const unsigned char animationData[] = {
 #endif
 
 uint32_t getAnimationSizeInBytes(void) {
+    
     return sizeof(animationData);
 }
+#endif // ANIMATION_IN_MEMORY
+

@@ -4,6 +4,9 @@
 #include <OctoWS2811.h>
 #include "Wire.h"
 
+#include <SdFat.h>
+#include <SdFatUtil.h>
+
 #include "Config.h"
 #include "Time.h"
 
@@ -13,19 +16,20 @@
 #include "Animations.h"
 
 #include "Scheduling/ScheduledAction.h"
+#include "File/SdCardFileReader.h"
 
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
 StatusLed statusLed(LED_PIN);
 AccelGyro accelGyro(statusLed);
+
+SdCardFileReader fileReader;
 Animator animator;
 
 ScheduledAction sdCardStatusAction;
 ScheduledAction serialStatusAction;
 
 
-#include <SdFat.h>
-#include <SdFatUtil.h>
 /*
  ** MOSI - pin 11
  ** MISO - pin 12
@@ -37,6 +41,7 @@ ScheduledAction serialStatusAction;
 bool cardPresence = false;
 SdFat sd;
 SdFile myFile;
+SdFile animationFile;
 
 #define LEDS_PER_STRIP 2
 #define MEMORY_NEEDED_FOR_EACH_LED 6
@@ -47,7 +52,6 @@ int drawingMemory[LEDS_PER_STRIP * MEMORY_NEEDED_FOR_EACH_LED];
 const int config = WS2811_GRB | WS2811_800kHz;
 
 OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, drawingMemory, config);
-
 
 void checkCardPresence(void) {
   bool newCardPresence = digitalRead(SD_CD_PIN);
@@ -94,7 +98,7 @@ void setup() {
         delay(500);
         continue;
       }
-      Serial.println("initialization done.");    
+      Serial.println("initialization done.");
       break;
     }
     
@@ -135,10 +139,13 @@ void setup() {
 
     
     Serial.println("Done");
-    
-    
+     
+    if (!animationFile.open("TEST1.ANI", O_RDONLY)) {
+      sd.errorHalt("opening TEST1.ANI for read failed");
+    }
+    fileReader.setSdFile(&animationFile);
     // setup leds and animation 
-    animator.readAnimationDetails();
+    animator.readAnimationDetails(&fileReader);
 
     leds.begin();
 

@@ -18,7 +18,8 @@
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
-unsigned char readByteUnsignedChar(int* aPosition) {
+#ifdef ANIMATION_IN_MEMORY
+unsigned char Animator::readByteUnsignedChar(int* aPosition) {
     unsigned char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
     if (readByte == ESCAPE_BYTE) {
         readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
@@ -28,10 +29,38 @@ unsigned char readByteUnsignedChar(int* aPosition) {
     return readByte;
 }
 
-signed char readByteSignedChar(int* aPosition) {
+signed char Animator::readByteSignedChar(int* aPosition) {
     signed char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
     if (readByte == ESCAPE_BYTE) {
         readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
+        readByte = readByte ^ XOR_BYTE;
+    }
+
+    return readByte;
+}
+#endif
+
+unsigned char Animator::readByteUnsignedChar(int* aPosition) {
+    fileReader->seek(*aPosition);
+    unsigned char readByte = (unsigned char)fileReader->readByte();
+    (*(aPosition))++;
+    
+    if (readByte == ESCAPE_BYTE) {
+        readByte = (unsigned char)fileReader->readByte();
+        (*(aPosition))++;
+        readByte = readByte ^ XOR_BYTE;
+    }
+
+    return readByte;
+}
+
+signed char Animator::readByteSignedChar(int* aPosition) {
+    fileReader->seek(*aPosition);
+    signed char readByte = (signed char)fileReader->readByte();
+    (*(aPosition))++;
+    if (readByte == ESCAPE_BYTE) {
+        readByte =  (signed char)fileReader->readByte();
+        (*(aPosition))++;
         readByte = readByte ^ XOR_BYTE;
     }
 
@@ -57,7 +86,8 @@ void Animator::initializeValueAxisData(unsigned int ledsInAnimation, unsigned in
 }
 
 
-void Animator::readAnimationDetails() {
+void Animator::readAnimationDetails(FileReader *_fileReader) {
+    fileReader = _fileReader;
     timeAxisNum = -1;
 
     initializeValueAxisData(COUNT_OF_LEDS_IN_ANIMATION, MAX_VALUES_IN_RANGE_USED_BY_ANIMATION);

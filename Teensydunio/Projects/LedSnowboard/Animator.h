@@ -10,6 +10,8 @@
 
 #include "Animations.h"
 
+#include "File/FileReader.h"
+
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
 
 struct valueAxis {
@@ -32,12 +34,14 @@ struct valueAxis {
 
 class Animator {
 public:
-    void readAnimationDetails(void);
+    void readAnimationDetails(FileReader *fileReader);
     void renderNextFrame(void);
 
     int iTimeAxisSpeed;
     
 private:
+    FileReader *fileReader;
+    
     int animationByteOffset;
     int timeAxisNum;
     int valueAxisCount;
@@ -75,6 +79,10 @@ private:
     void readValueAxis(unsigned int valueAxisIndex);
     void processFrame(unsigned int frameIndex);
     void beginReadAxis(void);
+    
+    unsigned char readByteUnsignedChar(int* aPosition);
+    signed char readByteSignedChar(int* aPosition);
+
 };
 
 #endif /* ANIMATOR_H_ */

@@ -106,7 +106,8 @@ STANDARD_LIBRARIES = \
         $(LIBRARYPATH)/Wire/Wire.cpp
 
 MODULES = \
-        $(wildcard Scheduling/*.cpp)
+        $(wildcard Scheduling/*.cpp) \
+        $(wildcard File/*.cpp)
 
 PROJECT_SPECIFIC_LIBRARIES = \
         ../../Libraries/I2Cdev/I2Cdev.cpp \

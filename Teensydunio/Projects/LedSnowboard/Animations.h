@@ -25,6 +25,9 @@
 #endif
 
 extern const unsigned char animationData[];
+
+#ifdef ANIMATION_IN_MEMORY
 uint32_t getAnimationSizeInBytes(void);
+#endif
 
 #endif /* ANIMATIONS_H_ */
