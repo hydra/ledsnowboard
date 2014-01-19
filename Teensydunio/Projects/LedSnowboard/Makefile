@@ -65,7 +65,7 @@ CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti# -Wp,-v
 CFLAGS = -I$(COREPATH)# -Wp,-v
 
 # linker options
-LDFLAGS = -Os -Wl,--gc-sections -mcpu=cortex-m4 -mthumb -T$(COREPATH)/mk20dx256.ld
+LDFLAGS = -Os -Wl,--gc-sections -mcpu=cortex-m4 -mthumb -T$(COREPATH)/mk20dx256.ld -Wl,-Map,$(TARGET).map
 
 # additional libraries to link
 LIBS = -lm
@@ -154,6 +154,6 @@ endif
 -include $(OBJS:.o=.d)
 
 clean:
-	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET).hex.elf $(TARGET).elf $(TARGET).hex
+	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET).hex.elf $(TARGET).elf $(TARGET).hex $(TARGET).map
 
 
