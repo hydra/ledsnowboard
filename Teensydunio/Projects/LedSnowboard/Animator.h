@@ -14,11 +14,12 @@
 
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
 
-struct valueAxis {
-    int lowValue;
-    int highValue;
-    int zeroValue;
-} typedef ValueAxis;
+typedef struct valueAxis {
+    int8_t valueAxisLowValue;
+    int8_t valueAxisHighValue;
+    int8_t valueAxisCentreValue;
+    uint8_t **valueAxisFunctionIndices;
+} valueAxis_t;
 
 // Frame Types
 #define FT_COLOUR 1
@@ -53,10 +54,6 @@ private:
     uint16_t ledCount;
     uint8_t functionCount;
 
-    int8_t valueAxisLowValue;
-    int8_t valueAxisHighValue;
-    int8_t valueAxisCentreValue;
-
     uint16_t valueAxisOffset;
 
     uint8_t timeAxisLowValue;
@@ -67,6 +64,8 @@ private:
     uint8_t backgroundColourRed;
     uint8_t backgroundColourGreen;
     uint8_t backgroundColourBlue;
+
+    valueAxis_t *valueAxes;
 
     uint8_t valueAxisFunctionIndexes[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
     int32_t functionData[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];

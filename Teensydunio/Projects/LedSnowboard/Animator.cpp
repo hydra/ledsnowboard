@@ -36,9 +36,8 @@ void Animator::reset(void) {
     ledCount = 0;
     functionCount = 0;
 
-    valueAxisLowValue = 0;
-    valueAxisHighValue = 0;
-    valueAxisCentreValue = 0;
+    // TODO freeValueAxes()
+    free(valueAxes);
 
     valueAxisOffset = 0;
 
@@ -119,7 +118,6 @@ void Animator::initializeValueAxisData(uint16_t ledsInAnimation, uint16_t values
     }
 }
 
-
 void Animator::readAnimationDetails(FileReader *_fileReader) {
     fileReader = _fileReader;
     hasAnimation = true;
@@ -152,6 +150,11 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     Serial.print("value axis count is ");
     Serial.print(valueAxisCount, DEC);
     Serial.print("\n");
+
+    valueAxes = (valueAxis_t *) malloc(valueAxisCount * sizeof(valueAxis_t));
+
+
+
 
     readTimeAxisHeader();
     
@@ -241,6 +244,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     Serial.print("\n");
 #endif
     
+    valueAxis_t *currentValueAxis = &valueAxes[0];
+
     if (!hasBackgroundColour ||
     	!(
     		red == backgroundColourRed &&
@@ -259,9 +264,9 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         int8_t end = 0;
         if (accelerometerValue < 0) {
             start = accelerometerValue;
-            end = valueAxisCentreValue;
+            end = currentValueAxis->valueAxisCentreValue;
         } else if (accelerometerValue > 0) {
-            start = valueAxisCentreValue + 1;
+            start = currentValueAxis->valueAxisCentreValue + 1;
             end = accelerometerValue + 1;
         }
 
@@ -337,27 +342,30 @@ void Animator::readTimeAxisHeader(void) {
 }
 
 void Animator::readValueAxis(uint8_t valueAxisIndex) {
+
+    valueAxis_t *valueAxis = &valueAxes[valueAxisIndex];
+
     beginReadAxisHeader();
 
-    valueAxisLowValue = readSignedByte(&animationByteOffset);
+    valueAxis->valueAxisLowValue = readSignedByte(&animationByteOffset);
     Serial.print("value axis low value : ");
-    Serial.print(valueAxisLowValue, DEC);
+    Serial.print(valueAxis->valueAxisLowValue, DEC);
     Serial.print("\n");
-    valueAxisHighValue = readSignedByte(&animationByteOffset);
+    valueAxis->valueAxisHighValue = readSignedByte(&animationByteOffset);
     Serial.print("value axis high value : ");
-    Serial.print(valueAxisHighValue, DEC);
+    Serial.print(valueAxis->valueAxisHighValue, DEC);
     Serial.print("\n");
-    valueAxisCentreValue = readSignedByte(&animationByteOffset);
+    valueAxis->valueAxisCentreValue = readSignedByte(&animationByteOffset);
     Serial.print("value axis zero value : ");
-    Serial.print(valueAxisCentreValue, DEC);
+    Serial.print(valueAxis->valueAxisCentreValue, DEC);
     Serial.print("\n");
 
-    valueAxisOffset = -valueAxisLowValue;
+    valueAxisOffset = -valueAxis->valueAxisLowValue;
     Serial.print("valueAxisOffset: ");
     Serial.print(valueAxisOffset, DEC);
     Serial.print("\n");
 
-    for (int8_t valueAxisValue = valueAxisLowValue; valueAxisValue <= valueAxisHighValue;
+    for (int8_t valueAxisValue = valueAxis->valueAxisLowValue; valueAxisValue <= valueAxis->valueAxisHighValue;
             valueAxisValue++) {
 
         Serial.print(valueAxisValue, DEC);
