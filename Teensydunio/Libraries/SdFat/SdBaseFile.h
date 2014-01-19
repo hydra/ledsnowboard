@@ -23,6 +23,9 @@
  * \file
  * \brief SdBaseFile class
  */
+
+#include <Arduino.h>
+
 #ifdef __AVR__
 #include <avr/pgmspace.h>
 #else  // __AVR__
@@ -47,7 +50,6 @@
 #define PROGMEM const
 #endif  // PROGMEM
 #endif  // __AVR__
-#include <Arduino.h>
 #include <SdFatConfig.h>
 #include <SdVolume.h>
 //------------------------------------------------------------------------------
