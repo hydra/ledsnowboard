@@ -38,7 +38,9 @@ ScheduledAction serialStatusAction;
 #define SD_CD_PIN 9 // Card detect for SD card
 #define SD_CS 10 // Chip select for SD card
 
-bool cardPresence = false;
+bool hasSdCard = false;
+bool previouslyHadSdCard = true;
+
 SdFat sd;
 SdFile myFile;
 SdFile animationFile;
@@ -53,16 +55,28 @@ const int config = WS2811_GRB | WS2811_800kHz;
 
 OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, drawingMemory, config);
 
-void checkCardPresence(void) {
-  bool newCardPresence = digitalRead(SD_CD_PIN);
-  if (newCardPresence != cardPresence) {
-    cardPresence = newCardPresence;
-    if (cardPresence == HIGH) {
-      Serial.println("SD card removed");
-    } else {
-      Serial.println("SD card inserted");
+void updateSdCardPresence(void) {
+  previouslyHadSdCard = hasSdCard;
+  hasSdCard = digitalRead(SD_CD_PIN); // HIGH == not-present, LOW == present
+  hasSdCard = !hasSdCard;
+}
+
+bool hasSdCardBeenInserted() {
+    return (hasSdCard && !previouslyHadSdCard);
+}
+
+bool hasSdCardBeenRemoved() {
+    return (!hasSdCard && previouslyHadSdCard);
+}
+
+void showSdCardInsertionOrRemovalMessage() {
+    if (hasSdCardBeenRemoved()) {
+        Serial.println("SD card removed");
     }
-  }  
+
+    if (hasSdCardBeenInserted()) {
+        Serial.println("SD card inserted");
+    }
 }
 
 void setup() {
@@ -86,23 +100,22 @@ void setup() {
     // configure SdCard hardware
     pinMode(SD_CD_PIN, INPUT);
 
+    leds.begin();
 
-    while(true) {
-      checkCardPresence();
-    
-      Serial.print("Initializing SD card...");
+    sdCardStatusAction.setDelayMillis(1000L);
+    sdCardStatusAction.reset();
 
-      if (!sd.begin(SD_CS, SPI_FULL_SPEED)) {
-        Serial.println("initialization failed!");
-        sd.initErrorHalt();
-        delay(500);
-        continue;
-      }
-      Serial.println("initialization done.");
-      break;
-    }
-    
+    statusLedAction.setDelayMillis(500L);
+    statusLedAction.reset();
 
+    serialStatusAction.setDelayMillis(1000L);
+    serialStatusAction.reset();
+
+    Serial.print("FINISHED SETUP");
+    Serial.print("\n");
+}
+
+void showSdCardContents(void) {
     Serial.println("Volume is FAT");
     Serial.println(sd.vol()->fatType(), DEC);
     Serial.println();
@@ -115,8 +128,56 @@ void setup() {
     // Recursive list of all directories
     Serial.println("Files found in all dirs:");
     sd.ls(LS_R);
+}
+
+void onSdCardInserted() {
+    Serial.print("Initializing SD card...");
+
+    bool sdCardInitialised = false;
+    uint8_t attemptsRemaining = 5;
+    while(attemptsRemaining--) {
+        sdCardInitialised = sd.begin(SD_CS, SPI_FULL_SPEED);
+        if (sdCardInitialised) {
+            break;
+        }
+
+        sd.initErrorPrint();
+        Serial.print("initialization failed, attemptsRemaining: ");
+        Serial.print(attemptsRemaining, DEC);
+        Serial.println();
+        delay(500);
+    }
+    if (!sdCardInitialised) {
+        return;
+    }
+
+    Serial.println("initialization done.");
+
+    showSdCardContents();
+
+    Serial.print("Opening TEST1.ANI...");
     
+    if (!animationFile.open("TEST1.ANI", O_RDONLY)) {
+        sd.errorPrint("opening TEST1.ANI for read failed");
+        return;
+    }
+    Serial.println("OK");
+
+    fileReader.setSdFile(&animationFile);
+    // setup leds and animation
+    animator.readAnimationDetails(&fileReader);
+
+    animationFrameAdvanceAction.setDelayMillis(animator.timeAxisFrequencyMillis);
+    animationFrameAdvanceAction.reset();
+}
+
+void onSdCardRemoved(void) {
+    animationFile.close();
+    animator.reset();
+}
+
 #ifdef WRITE_ANIMATION_TO_SDCARD
+void writeAdnimationToSdCard(void) {
     // delete possible existing file
     sd.remove("TEST1.ANI");
     
@@ -132,35 +193,8 @@ void setup() {
     
     Serial.print(" Done!");
     Serial.println();
-#endif
-    
-    sdCardStatusAction.setDelayMillis(1000L);
-    sdCardStatusAction.reset();
-
-    
-    Serial.println("Done");
-     
-    if (!animationFile.open("TEST1.ANI", O_RDONLY)) {
-      sd.errorHalt("opening TEST1.ANI for read failed");
-    }
-    fileReader.setSdFile(&animationFile);
-    // setup leds and animation 
-    animator.readAnimationDetails(&fileReader);
-
-    leds.begin();
-
-    statusLedAction.setDelayMillis(500L);
-    statusLedAction.reset();
-
-    serialStatusAction.setDelayMillis(1000L);
-    serialStatusAction.reset();
-
-    animationFrameAdvanceAction.setDelayMillis(animator.timeAxisFrequencyMillis);
-    animationFrameAdvanceAction.reset();
-
-    Serial.print("FINISHED SETUP");
-    Serial.print("\n");
 }
+#endif
 
 void updateCpuActivityLed(void) {
   if (!statusLedAction.isActionDue()) {
@@ -171,6 +205,10 @@ void updateCpuActivityLed(void) {
 }
 
 void updateAnimation() {
+    if (!animator.haveAnimation()) {
+        return;
+    }
+
     if (!animationFrameAdvanceAction.isActionDue()) {
         return;
     }
@@ -183,7 +221,19 @@ void checkSdCardStatus() {
     if (!sdCardStatusAction.isActionDue()) {
         return;
     }
-    checkCardPresence();
+
+    updateSdCardPresence();
+    showSdCardInsertionOrRemovalMessage();
+
+    if (hasSdCardBeenInserted()) {
+        onSdCardInserted();
+        return;
+    }
+
+    if (hasSdCardBeenRemoved()) {
+        onSdCardRemoved();
+    }
+
 }
 
 void updateSerialStatus() {

@@ -34,12 +34,16 @@ struct valueAxis {
 
 class Animator {
 public:
+    Animator(void);
     void readAnimationDetails(FileReader *fileReader);
     void renderNextFrame(void);
+    bool haveAnimation(void);
+    void reset(void);
 
     uint16_t timeAxisFrequencyMillis;
     
 private:
+    bool hasAnimation;
     FileReader *fileReader;
     
     uint32_t animationByteOffset;
@@ -47,8 +51,6 @@ private:
 
     uint8_t valueAxisCount;
     uint16_t ledCount;
-
-
     uint8_t functionCount;
 
     int8_t valueAxisLowValue;

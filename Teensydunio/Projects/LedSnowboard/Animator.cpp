@@ -18,6 +18,40 @@
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
+Animator::Animator(void) :
+        hasAnimation(false) {
+}
+
+bool Animator::haveAnimation(void) {
+    return hasAnimation;
+}
+
+void Animator::reset(void) {
+    hasAnimation = false;
+
+    animationByteOffset = 0;
+    animationByteOffsetOfFirstFrame = 0;
+
+    valueAxisCount = 0;
+    ledCount = 0;
+    functionCount = 0;
+
+    valueAxisLowValue = 0;
+    valueAxisHighValue = 0;
+    valueAxisCentreValue = 0;
+
+    valueAxisOffset = 0;
+
+    timeAxisLowValue = 0;
+    timeAxisHighValue = 0;
+    frameIndex = 0;
+
+    hasBackgroundColour = false;
+    backgroundColourRed = 0;
+    backgroundColourGreen = 0;
+    backgroundColourBlue = 0;
+}
+
 #ifdef ANIMATION_IN_MEMORY
 uint8_t Animator::readUnsignedByte(uint32_t* aPosition) {
     unsigned char readByte = (*(const unsigned char *)(animationData + (*(aPosition))++));
@@ -88,6 +122,8 @@ void Animator::initializeValueAxisData(uint16_t ledsInAnimation, uint16_t values
 
 void Animator::readAnimationDetails(FileReader *_fileReader) {
     fileReader = _fileReader;
+    hasAnimation = true;
+    animationByteOffset = 0;
 
     initializeValueAxisData(COUNT_OF_LEDS_IN_ANIMATION, MAX_VALUES_IN_RANGE_USED_BY_ANIMATION);
     initializeFunctionData(COUNT_OF_FUNCTIONS_IN_ANIMATION, COLOR_COMPONENT_COUNT);
