@@ -35,7 +35,7 @@ byte SdCardFileReader::readByte(void) {
 
 void SdCardFileReader::seek(uint32_t position) {
 
-	#ifdef DEBUG_SD_READER
+#ifdef DEBUG_SD_READER
     Serial.print("Seek: ");
     Serial.print(position, DEC);
     Serial.println();
