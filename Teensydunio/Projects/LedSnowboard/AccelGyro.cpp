@@ -80,5 +80,4 @@ void AccelGyro::refresh() {
 
         isZeroAxInitialized = true;
     }
-
 }
