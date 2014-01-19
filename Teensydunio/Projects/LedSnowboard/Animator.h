@@ -15,10 +15,11 @@
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
 
 typedef struct valueAxis {
+    // TODO remove 'valueAxis' prefix from members
     int8_t valueAxisLowValue;
     int8_t valueAxisHighValue;
     int8_t valueAxisCentreValue;
-    uint8_t **valueAxisFunctionIndices;
+    uint8_t **functionIndices;
 } valueAxis_t;
 
 // Frame Types
@@ -67,11 +68,11 @@ private:
 
     valueAxis_t *valueAxes;
 
-    uint8_t valueAxisFunctionIndexes[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
+    //uint8_t valueAxisFunctionIndexes[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
     int32_t functionData[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
 
     void initializeFunctionData(uint8_t functionCount, uint8_t colorComponentCount);
-    void initializeValueAxisData(uint16_t ledsInAnimation, uint16_t valuesInRange);
+    void initializeValueAxisData(valueAxis_t *valueAxis, uint16_t ledsInAnimation, uint16_t functionIndicesEntryCount);
     
     void readAndSetColour(uint16_t ledIndex);
     void readFunctionData(uint8_t functionIndex);

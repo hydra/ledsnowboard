@@ -110,10 +110,19 @@ void Animator::initializeFunctionData(uint8_t functionCount, uint8_t colorCompon
     }
 }
 
-void Animator::initializeValueAxisData(uint16_t ledsInAnimation, uint16_t valuesInRange) {
+void Animator::initializeValueAxisData(valueAxis_t *valueAxis, uint16_t ledsInAnimation, uint16_t functionIndicesEntryCount) {
     for (uint16_t i = 0; i < ledsInAnimation; i++) {
-        for (uint16_t j = 0; j < valuesInRange; j++) {
-            valueAxisFunctionIndexes[i][j] = 0;
+        for (uint16_t j = 0; j < functionIndicesEntryCount; j++) {
+#if 0
+            Serial.print((uint32_t)&valueAxis->functionIndices[i], HEX);
+            Serial.print(">");
+#endif
+            valueAxis->functionIndices[i][j] = 0;
+#if 0
+            Serial.print(": ");
+            Serial.print(valueAxis->functionIndices[i][j], HEX);
+            Serial.println();
+#endif
         }
     }
 }
@@ -123,7 +132,6 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     hasAnimation = true;
     animationByteOffset = 0;
 
-    initializeValueAxisData(COUNT_OF_LEDS_IN_ANIMATION, MAX_VALUES_IN_RANGE_USED_BY_ANIMATION);
     initializeFunctionData(COUNT_OF_FUNCTIONS_IN_ANIMATION, COLOR_COMPONENT_COUNT);
 
     if (readUnsignedByte(&animationByteOffset) != HEADER_BYTE) {
@@ -152,9 +160,6 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     Serial.print("\n");
 
     valueAxes = (valueAxis_t *) malloc(valueAxisCount * sizeof(valueAxis_t));
-
-
-
 
     readTimeAxisHeader();
     
@@ -273,7 +278,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
         	uint16_t valueAxisIndex = valueAxisOffset + valueAxisValue;
 
-            int functionIndex = valueAxisFunctionIndexes[ledIndex][valueAxisIndex];
+            int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisIndex];
             //Serial.print(functionIndex, DEC);
             //Serial.print(":");
             redIncrement += functionData[functionIndex][0];
@@ -360,6 +365,47 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
     Serial.print(valueAxis->valueAxisCentreValue, DEC);
     Serial.print("\n");
 
+
+    uint16_t functionIndicesEntryCount = -valueAxis->valueAxisLowValue + valueAxis->valueAxisHighValue;
+    if (
+        valueAxis->valueAxisCentreValue != valueAxis->valueAxisLowValue
+        &&
+        valueAxis->valueAxisCentreValue != valueAxis->valueAxisHighValue
+    ) {
+        functionIndicesEntryCount++;
+    }
+
+    Serial.print("functionIndicesEntryCount: ");
+    Serial.print(functionIndicesEntryCount, DEC);
+    Serial.print("\n");
+
+    uint32_t size = functionIndicesEntryCount * ledCount;
+
+    Serial.print("size: ");
+    Serial.print(size, DEC);
+    Serial.print("\n");
+
+    const size_t row_pointers_bytes = ledCount * sizeof *valueAxis->functionIndices;
+    const size_t row_elements_bytes = functionIndicesEntryCount * sizeof **valueAxis->functionIndices;
+    const uint32_t memoryToAllocate = row_pointers_bytes + (ledCount * row_elements_bytes);
+
+    Serial.print("memoryToAllocate: ");
+    Serial.print(memoryToAllocate, DEC);
+    Serial.print("\n");
+
+    valueAxis->functionIndices = (uint8_t **) malloc(memoryToAllocate);
+
+    Serial.print("valueAxis->functionIndices: ");
+    Serial.print((uint32_t)valueAxis->functionIndices, HEX);
+    Serial.print("\n");
+
+    uint8_t *data = (uint8_t *)valueAxis->functionIndices + sizeof(uint8_t*) * ledCount;
+    for(size_t i = 0; i < ledCount; i++) {
+        valueAxis->functionIndices[i] = data + i * functionIndicesEntryCount;
+    }
+
+    initializeValueAxisData(valueAxis, ledCount, functionIndicesEntryCount);
+
     valueAxisOffset = -valueAxis->valueAxisLowValue;
     Serial.print("valueAxisOffset: ");
     Serial.print(valueAxisOffset, DEC);
@@ -391,17 +437,17 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
 				case FT_FUNCTION:
 
 					functionIndex = readUnsignedByte(&animationByteOffset);
-					valueAxisFunctionIndexes[ledIndex][valueAxisIndex] = functionIndex;
+					valueAxis->functionIndices[ledIndex][valueAxisIndex] = functionIndex;
 
-					if(valueAxisFunctionIndexes[ledIndex][valueAxisIndex] != 0) {
+					if (valueAxis->functionIndices[ledIndex][valueAxisIndex] != 0) {
 						Serial.print("function is ");
-						Serial.print(valueAxisFunctionIndexes[ledIndex][valueAxisIndex], DEC);
+						Serial.print(valueAxis->functionIndices[ledIndex][valueAxisIndex], DEC);
 						Serial.print("\n");
 					}
 				break;
 				case FT_LINKED:
 					functionIndex = 255;
-					valueAxisFunctionIndexes[ledIndex][valueAxisIndex] = functionIndex;
+					valueAxis->functionIndices[ledIndex][valueAxisIndex] = functionIndex;
 				break;
             }
         }
