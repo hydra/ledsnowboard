@@ -28,7 +28,7 @@
 								<option id="org.eclipse.cdt.build.core.settings.holder.libfiles.567850513" name="Library Files" superClass="org.eclipse.cdt.build.core.settings.holder.libfiles"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1233270136" name="Assembly" superClass="org.eclipse.cdt.build.core.settings.holder">
-								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.132092897" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath"/>
+								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.132092897" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths"/>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1781693602" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1289396109" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder">
@@ -39,17 +39,19 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/libraries/Wire}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/MPU6050}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/I2Cdev}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SdFat}&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.build.core.settings.holder.symbols.1467704968" name="Symbols" superClass="org.eclipse.cdt.build.core.settings.holder.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DF_CPU=96000000"/>
 									<listOptionValue builtIn="false" value="USB_SERIAL"/>
 									<listOptionValue builtIn="false" value="LAYOUT_US_ENGLISH"/>
 									<listOptionValue builtIn="false" value="__MK20DX256__"/>
+									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1543828188" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1586847572" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder">
-								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1392948868" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath"/>
+								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1392948868" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths"/>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1236990700" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 						</toolChain>
@@ -60,8 +62,8 @@
 							<tool id="org.eclipse.cdt.build.core.settings.holder.382707080" name="Assembly" superClass="org.eclipse.cdt.build.core.settings.holder.1233270136">
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.2113903236" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
-							<tool id="org.eclipse.cdt.build.core.settings.holder.1240016900" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder.1289396109">
-								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1353720663" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+							<tool id="org.eclipse.cdt.build.core.settings.holder.1240016900" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder.1233270136">
+								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1353720663" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/arm-none-eabi-include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/arm-none-eabi-include-c++}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/LedSnowboard/teensy3}&quot;"/>
@@ -72,7 +74,7 @@
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.989734510" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
-							<tool id="org.eclipse.cdt.build.core.settings.holder.528809892" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder.1586847572">
+							<tool id="org.eclipse.cdt.build.core.settings.holder.528809892" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder.1233270136">
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1693323044" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 						</toolChain>
