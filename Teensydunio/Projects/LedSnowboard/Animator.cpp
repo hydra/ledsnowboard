@@ -249,21 +249,25 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     Serial.print("\n");
 #endif
     
-    valueAxis_t *currentValueAxis = &valueAxes[0];
-
-    if (!hasBackgroundColour ||
-    	!(
+    if (hasBackgroundColour &&
+    	(
     		red == backgroundColourRed &&
     		green == backgroundColourGreen &&
     		blue == backgroundColourBlue
     	)
     ) {
+        leds.setPixel(ledIndex, red, green, blue);
+        return;
+    }
 
-    	int8_t accelerometerValue = accelGyro.getNormalisedAccelerometerXValue();
+    int32_t redIncrement = 0;
+    int32_t greenIncrement = 0;
+    int32_t blueIncrement = 0;
 
-        int32_t redIncrement = 0;
-        int32_t greenIncrement = 0;
-        int32_t blueIncrement = 0;
+    for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
+        valueAxis_t *currentValueAxis = &valueAxes[valueAxisIndex];
+
+        int8_t accelerometerValue = accelGyro.getNormalisedAccelerometerXValue();
 
         int8_t start = 0;
         int8_t end = 0;
@@ -276,7 +280,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         }
 
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
-        	uint16_t valueAxisIndex = valueAxisOffset + valueAxisValue;
+            uint16_t valueAxisIndex = valueAxisOffset + valueAxisValue;
 
             int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisIndex];
             //Serial.print(functionIndex, DEC);
@@ -294,16 +298,15 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         Serial.print(blueIncrement, DEC);
         Serial.print("\n");*/
 #endif
-        
+
         redIncrement = fixIncrement(redIncrement);
         greenIncrement = fixIncrement(greenIncrement);
         blueIncrement = fixIncrement(blueIncrement);
-
-
-        red = applyIncrement(red, redIncrement);
-        green = applyIncrement(green, greenIncrement);
-        blue = applyIncrement(blue, blueIncrement);
     }
+
+    red = applyIncrement(red, redIncrement);
+    green = applyIncrement(green, greenIncrement);
+    blue = applyIncrement(blue, blueIncrement);
 
     leds.setPixel(ledIndex, red, green, blue);
 }
