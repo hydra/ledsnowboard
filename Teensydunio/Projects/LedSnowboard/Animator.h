@@ -37,51 +37,51 @@ public:
     void readAnimationDetails(FileReader *fileReader);
     void renderNextFrame(void);
 
-    int iTimeAxisSpeed;
+    uint16_t timeAxisFrequencyMillis;
     
 private:
     FileReader *fileReader;
     
-    int animationByteOffset;
-    int timeAxisNum;
-    int valueAxisCount;
-    int ledCount;
+    uint32_t animationByteOffset;
+    uint32_t animationByteOffsetOfFirstFrame;
 
-    int animationByteOffsetOfFirstFrame;
+    uint8_t valueAxisCount;
+    uint16_t ledCount;
 
-    int iNumFunctions;
 
-    signed char valueAxisLowValue;
-    signed char valueAxisHighValue;
-    signed char valueAxisZeroValue;
+    uint8_t functionCount;
 
-    int valueAxisOffset;
+    int8_t valueAxisLowValue;
+    int8_t valueAxisHighValue;
+    int8_t valueAxisCentreValue;
 
-    int timeAxisLowValue;
-    int timeAxisHighValue;
+    uint16_t valueAxisOffset;
 
-    bool iBackgroundColour;
-    unsigned char iBackgroundColourRed;
-    unsigned char iBackgroundColourGreen;
-    unsigned char iBackgroundColourBlue;
+    uint8_t timeAxisLowValue;
+    uint8_t timeAxisHighValue;
+    uint8_t frameIndex;
 
-    unsigned char iValueAxisData[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
-    signed int iFunctions[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
+    bool hasBackgroundColour;
+    uint8_t backgroundColourRed;
+    uint8_t backgroundColourGreen;
+    uint8_t backgroundColourBlue;
 
-    unsigned int frameIndex;
+    uint8_t valueAxisFunctionIndexes[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
+    int32_t functionData[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
 
-    void initializeFunctionData(unsigned int functionCount, unsigned int colorComponentCount);
-    void initializeValueAxisData(unsigned int ledsInAnimation, unsigned int valuesInRange);
+    void initializeFunctionData(uint8_t functionCount, uint8_t colorComponentCount);
+    void initializeValueAxisData(uint16_t ledsInAnimation, uint16_t valuesInRange);
     
-    void readAndSetColour(int ledNum);
-    void readFunctionData(int num);
-    void readTimeAxis(void);
-    void readValueAxis(unsigned int valueAxisIndex);
-    void processFrame(unsigned int frameIndex);
-    void beginReadAxis(void);
+    void readAndSetColour(uint16_t ledIndex);
+    void readFunctionData(uint8_t functionIndex);
+    void readTimeAxisHeader(void);
+    void readValueAxis(uint8_t valueAxisIndex);
+    void processFrame(uint8_t frameIndex);
+    void beginReadAxisHeader(void);
     
-    unsigned char readByteUnsignedChar(int* aPosition);
-    signed char readByteSignedChar(int* aPosition);
+    uint32_t readUnsignedInt32(void);
+    uint8_t readUnsignedByte(uint32_t* aPosition);
+    int8_t readSignedByte(uint32_t* aPosition);
 
 };
 

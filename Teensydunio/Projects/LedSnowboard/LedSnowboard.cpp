@@ -155,7 +155,7 @@ void setup() {
     serialStatusAction.setDelayMillis(1000L);
     serialStatusAction.reset();
 
-    animationFrameAdvanceAction.setDelayMillis(animator.iTimeAxisSpeed);
+    animationFrameAdvanceAction.setDelayMillis(animator.timeAxisFrequencyMillis);
     animationFrameAdvanceAction.reset();
 
     Serial.print("FINISHED SETUP");
