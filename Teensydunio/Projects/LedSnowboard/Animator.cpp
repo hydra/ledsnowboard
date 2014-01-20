@@ -20,6 +20,8 @@
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
+int8_t accelerometerValue;
+
 void showFreeRam(void);
 
 Animator::Animator(void) :
@@ -375,7 +377,6 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
         ValueAxis *currentValueAxis = valueAxes[valueAxisIndex];
 
-        int8_t accelerometerValue = accelGyro.getNormalisedAccelerometerXValue();
 
         int8_t start = 0;
         int8_t end = 0;
@@ -600,11 +601,16 @@ void Animator::readFunctionIndices(ValueAxis *valueAxis) {
 }
 
 void Animator::renderNextFrame() {
+
+    accelerometerValue = accelGyro.getNormalisedAccelerometerXValue();
+
 #if 0
     Serial.print("Processing frame: ");
     Serial.print(frameIndex, DEC);
     Serial.println();
 #endif
+
+
     processFrame(frameIndex);
 
     frameIndex++;
