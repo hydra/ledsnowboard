@@ -11,17 +11,9 @@
 #include "Animations.h"
 
 #include "File/FileReader.h"
+#include "ValueAxis.h"
 
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
-
-typedef struct valueAxis {
-    // TODO remove 'valueAxis' prefix from members
-    int8_t valueAxisLowValue;
-    int8_t valueAxisHighValue;
-    int8_t valueAxisCentreValue;
-    uint8_t **functionIndices;
-    uint16_t functionIndicesEntryCount;
-} valueAxis_t;
 
 // Frame Types
 #define FT_COLOUR 1
@@ -65,14 +57,14 @@ private:
     uint8_t backgroundColourGreen;
     uint8_t backgroundColourBlue;
 
-    valueAxis_t *valueAxes;
+    ValueAxis **valueAxes;
 
     int32_t functionData[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
     void initializeFunctionData(uint8_t functionCount, uint8_t colorComponentCount);
 
-    void allocateFunctionIndices(valueAxis_t *valueAxis);
-    void initializeFunctionIndices(valueAxis_t *valueAxis);
-    void readFunctionIndices(valueAxis_t *valueAxis);
+    void allocateFunctionIndices(ValueAxis *valueAxis);
+    void initializeFunctionIndices(ValueAxis *valueAxis);
+    void readFunctionIndices(ValueAxis *valueAxis);
     
     void readAndSetColour(uint16_t ledIndex);
     void readFunctionData(uint8_t functionIndex);

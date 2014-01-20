@@ -7,6 +7,8 @@
 
 #include "WProgram.h"
 
+#include <new.cpp>
+
 #include <OctoWS2811.h>
 #include "AccelGyro.h"
 #include "Time.h"
@@ -19,7 +21,8 @@ extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
 Animator::Animator(void) :
-        hasAnimation(false) {
+        hasAnimation(false),
+        valueAxes(NULL) {
 }
 
 bool Animator::haveAnimation(void) {
@@ -36,8 +39,19 @@ void Animator::reset(void) {
     ledCount = 0;
     functionCount = 0;
 
-    // TODO freeValueAxes()
-    free(valueAxes);
+    if (valueAxes) {
+        for(int valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
+            ValueAxis *valueAxis = valueAxes[valueAxisIndex];
+            if (!valueAxis) {
+                continue;
+            }
+            free(valueAxis->functionIndices);
+            delete valueAxis;
+            valueAxes[valueAxisIndex] = 0;
+        }
+        free(valueAxes);
+        valueAxes = 0;
+    }
 
     valueAxisOffset = 0;
 
@@ -99,7 +113,7 @@ void Animator::initializeFunctionData(uint8_t functionCount, uint8_t colorCompon
     }
 }
 
-void Animator::initializeFunctionIndices(valueAxis_t *valueAxis) {
+void Animator::initializeFunctionIndices(ValueAxis *valueAxis) {
     for (uint16_t i = 0; i < ledCount; i++) {
         for (uint16_t j = 0; j < valueAxis->functionIndicesEntryCount; j++) {
 #if 0
@@ -118,7 +132,6 @@ void Animator::initializeFunctionIndices(valueAxis_t *valueAxis) {
 
 void Animator::readAnimationDetails(FileReader *_fileReader) {
     fileReader = _fileReader;
-    hasAnimation = true;
     animationByteOffset = 0;
 
     if (readUnsignedByte(&animationByteOffset) != HEADER_BYTE) {
@@ -144,24 +157,32 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
         readFunctionData(functionIndex);
     }
 
-
     valueAxisCount = readUnsignedByte(&animationByteOffset);
     Serial.print("value axis count is ");
     Serial.print(valueAxisCount, DEC);
     Serial.print("\n");
 
-    valueAxes = (valueAxis_t *) malloc(valueAxisCount * sizeof(valueAxis_t));
+    uint32_t memoryToAllocate = valueAxisCount * sizeof(ValueAxis *);
+    valueAxes = (ValueAxis **) malloc(memoryToAllocate);
+    if (!valueAxes) {
+        return;
+    }
+    memset(valueAxes, 0, memoryToAllocate);
 
     readTimeAxisHeader();
     
     for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
             valueAxisIndex++) {
+        ValueAxis *valueAxis = new ValueAxis();
+        valueAxes[valueAxisIndex] = valueAxis;
         readValueAxis(valueAxisIndex);
     }
     
     animationByteOffsetOfFirstFrame = animationByteOffset;
 
     frameIndex = timeAxisLowValue;
+
+    hasAnimation = true;
 }
 
 uint32_t Animator::readUnsignedInt32(void) {
@@ -258,7 +279,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     int32_t blueIncrement = 0;
 
     for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
-        valueAxis_t *currentValueAxis = &valueAxes[valueAxisIndex];
+        ValueAxis *currentValueAxis = valueAxes[valueAxisIndex];
 
         int8_t accelerometerValue = accelGyro.getNormalisedAccelerometerXValue();
 
@@ -352,7 +373,7 @@ void Animator::readTimeAxisHeader(void) {
     }
 }
 
-void Animator::allocateFunctionIndices(valueAxis_t *valueAxis) {
+void Animator::allocateFunctionIndices(ValueAxis *valueAxis) {
     valueAxis->functionIndicesEntryCount = -valueAxis->valueAxisLowValue + valueAxis->valueAxisHighValue;
     if (
         valueAxis->valueAxisCentreValue != valueAxis->valueAxisLowValue
@@ -394,7 +415,7 @@ void Animator::allocateFunctionIndices(valueAxis_t *valueAxis) {
 
 void Animator::readValueAxis(uint8_t valueAxisIndex) {
 
-    valueAxis_t *valueAxis = &valueAxes[valueAxisIndex];
+    ValueAxis *valueAxis = valueAxes[valueAxisIndex];
 
     beginReadAxisHeader();
 
@@ -418,7 +439,7 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
     readFunctionIndices(valueAxis);
 }
 
-void Animator::readFunctionIndices(valueAxis_t *valueAxis) {
+void Animator::readFunctionIndices(ValueAxis *valueAxis) {
     valueAxisOffset = -valueAxis->valueAxisLowValue;
     Serial.print("valueAxisOffset: ");
     Serial.print(valueAxisOffset, DEC);
