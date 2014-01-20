@@ -59,8 +59,9 @@ private:
 
     ValueAxis **valueAxes;
 
-    int32_t functionData[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
-    void initializeFunctionData(uint8_t functionCount, uint8_t colorComponentCount);
+    int32_t **functionData;
+    void allocateFunctionData(void);
+    void initializeFunctionData(uint8_t colorComponentCount);
 
     void allocateFunctionIndices(ValueAxis *valueAxis);
     void initializeFunctionIndices(ValueAxis *valueAxis);

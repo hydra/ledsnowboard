@@ -79,8 +79,27 @@ void showSdCardInsertionOrRemovalMessage() {
     }
 }
 
+uint32_t MyFreeRam(){ // for Teensy 3.0
+    uint32_t stackTop;
+    uint32_t heapTop;
+    // current position of the stack.
+    stackTop = (uint32_t) &stackTop;
+    // current position of heap.
+    void* hTop = malloc(1);
+    heapTop = (uint32_t) hTop;
+    free(hTop);
+    // The difference is the free, available ram.
+    return stackTop - heapTop;
+}
+
+void showFreeRam(void) {
+    Serial.print("Free: 0x");
+    Serial.print(MyFreeRam(), HEX);
+    Serial.println();
+}
+
 void setup() {
-     pinMode(LED_PIN, OUTPUT);
+    pinMode(LED_PIN, OUTPUT);
       
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
       Wire.begin();
@@ -111,10 +130,13 @@ void setup() {
     serialStatusAction.setDelayMillis(1000L);
     serialStatusAction.reset();
 
+    showFreeRam();
+
     Serial.print("FINISHED SETUP");
     Serial.print("\n");
 }
 
+#if SHOW_SD_CARD_CONTENTS_ON_INSERTION
 void showSdCardContents(void) {
     Serial.println("Volume is FAT");
     Serial.println(sd.vol()->fatType(), DEC);
@@ -129,6 +151,7 @@ void showSdCardContents(void) {
     Serial.println("Files found in all dirs:");
     sd.ls(LS_R);
 }
+#endif
 
 void onSdCardInserted() {
     Serial.print("Initializing SD card...");
@@ -153,7 +176,9 @@ void onSdCardInserted() {
 
     Serial.println("initialization done.");
 
+#if SHOW_SD_CARD_CONTENTS_ON_INSERTION
     showSdCardContents();
+#endif
 
 #ifdef USE_ANIMATION_1
     Serial.print("Opening TEST1.ANI...");
@@ -185,26 +210,6 @@ void onSdCardRemoved(void) {
     animationFile.close();
     animator.reset();
 }
-
-#ifdef WRITE_ANIMATION_TO_SDCARD
-void writeAdnimationToSdCard(void) {
-    // delete possible existing file
-    sd.remove("TEST1.ANI");
-    
-    // open the file for write at end like the Native SD library
-    if (!myFile.open("TEST1.ANI", O_WRONLY | O_CREAT)) {
-      sd.errorHalt("opening TEST1.ANI for write failed");
-    }
-    Serial.print("Writing animation, bytes: ");
-    Serial.print(getAnimationSizeInBytes(), DEC);
-    
-    myFile.write(animationData, getAnimationSizeInBytes());
-    myFile.close();
-    
-    Serial.print(" Done!");
-    Serial.println();
-}
-#endif
 
 void updateCpuActivityLed(void) {
   if (!statusLedAction.isActionDue()) {
