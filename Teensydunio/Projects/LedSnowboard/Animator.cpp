@@ -134,29 +134,38 @@ int8_t Animator::readSignedByte(uint32_t* aPosition) {
 
 void Animator::initializeFunctionData(uint8_t colorComponentCount) {
     for (uint8_t i = 0; i < functionCount; i++) {
+        Serial.print("Row: ");
+        Serial.print(i, DEC);
+        Serial.print(" - ");
         for (uint8_t j = 0; j < colorComponentCount; j++) {
             functionData[i][j] = 0;
             Serial.print("#");
         }
+        Serial.println("..OK");
     }
-    Serial.println();
+    Serial.println("functionData initialised");
 }
 
 void Animator::initializeFunctionIndices(ValueAxis *valueAxis) {
     for (uint16_t i = 0; i < ledCount; i++) {
+        Serial.print("Row: ");
+        Serial.print(i, DEC);
+        Serial.print(" - ");
         for (uint16_t j = 0; j < valueAxis->functionIndicesEntryCount; j++) {
 #if 0
             Serial.print((uint32_t)&valueAxis->functionIndices[i], HEX);
-            Serial.print(">");
 #endif
             valueAxis->functionIndices[i][j] = 0;
+            Serial.print("#");
 #if 0
             Serial.print(": ");
             Serial.print(valueAxis->functionIndices[i][j], HEX);
             Serial.println();
 #endif
         }
+        Serial.println("..OK");
     }
+    Serial.println("functionIndicies initialised");
 }
 
 void Animator::readAnimationDetails(FileReader *_fileReader) {
@@ -477,8 +486,16 @@ void Animator::allocateFunctionIndices(ValueAxis *valueAxis) {
 
 #ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
     valueAxis->functionIndices = (uint8_t **) malloc(row_pointers_bytes);
-    for(size_t i = 0; i < functionCount; i++) {
+    for(size_t i = 0; i < ledCount; i++) {
         valueAxis->functionIndices[i] = (uint8_t *) malloc(row_elements_bytes);
+        if (!valueAxis->functionIndices[i]) {
+            Serial.print("FAILED AT ");
+            Serial.print(i, DEC);
+            Serial.print(" - Could not allocate bytes: ");
+            Serial.print(row_elements_bytes, DEC);
+            Serial.println();
+            while(1) {};
+        }
     }
 #else
     // FIXME is this really correct?

@@ -12,8 +12,8 @@
 #define LED_PIN 13
 
 // Select your animation - they are mutually exclusive.
-#define USE_ANIMATION_1
-//#define USE_ANIMATION_2
+//#define USE_ANIMATION_1
+#define USE_ANIMATION_2
 
 //#define DEBUG_ANIMATOR_CODEC
 
