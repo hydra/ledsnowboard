@@ -32,8 +32,6 @@ typedef struct valueAxis {
 
 #define HEADER_BYTE 0x56
 #define TERMINATING_BYTE 0x45
-#define ESCAPE_BYTE 0x02
-#define XOR_BYTE 0x20
 
 class Animator {
 public:

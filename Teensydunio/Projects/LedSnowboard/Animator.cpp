@@ -78,12 +78,6 @@ uint8_t Animator::readUnsignedByte(uint32_t* aPosition) {
     fileReader->seek(*aPosition);
     unsigned char readByte = (unsigned char)fileReader->readByte();
     (*(aPosition))++;
-    
-    if (readByte == ESCAPE_BYTE) {
-        readByte = (unsigned char)fileReader->readByte();
-        (*(aPosition))++;
-        readByte = readByte ^ XOR_BYTE;
-    }
 
     return readByte;
 }
@@ -92,12 +86,6 @@ int8_t Animator::readSignedByte(uint32_t* aPosition) {
     fileReader->seek(*aPosition);
     signed char readByte = (signed char)fileReader->readByte();
     (*(aPosition))++;
-
-    if (readByte == ESCAPE_BYTE) {
-        readByte =  (signed char)fileReader->readByte();
-        (*(aPosition))++;
-        readByte = readByte ^ XOR_BYTE;
-    }
 
     return readByte;
 }
