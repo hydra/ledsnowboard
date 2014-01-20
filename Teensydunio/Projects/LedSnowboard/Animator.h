@@ -20,6 +20,7 @@ typedef struct valueAxis {
     int8_t valueAxisHighValue;
     int8_t valueAxisCentreValue;
     uint8_t **functionIndices;
+    uint16_t functionIndicesEntryCount;
 } valueAxis_t;
 
 // Frame Types
@@ -69,9 +70,11 @@ private:
     valueAxis_t *valueAxes;
 
     int32_t functionData[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
-
     void initializeFunctionData(uint8_t functionCount, uint8_t colorComponentCount);
-    void initializeValueAxisData(valueAxis_t *valueAxis, uint16_t ledsInAnimation, uint16_t functionIndicesEntryCount);
+
+    void allocateFunctionIndices(valueAxis_t *valueAxis);
+    void initializeFunctionIndices(valueAxis_t *valueAxis);
+    void readFunctionIndices(valueAxis_t *valueAxis);
     
     void readAndSetColour(uint16_t ledIndex);
     void readFunctionData(uint8_t functionIndex);
