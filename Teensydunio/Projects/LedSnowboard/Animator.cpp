@@ -456,17 +456,10 @@ void Animator::readFunctionIndices(ValueAxis *valueAxis) {
 
 
         for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-
-            uint16_t ledNumber = readUnsignedByte(&animationByteOffset); // led number // FIXME ledNum should be uint16_t
-            uint8_t frameType = readUnsignedByte(&animationByteOffset);
+        	uint8_t frameType = readUnsignedByte(&animationByteOffset);
 
             uint16_t valueAxisIndex = valueAxisOffset + valueAxisValue;
-#if 0
-            Serial.print("ledNumber: ");
-            Serial.print(ledNumber, DEC);
-            Serial.print(", valueAxisIndex: ");
-            Serial.print(valueAxisIndex, DEC);
-#endif
+
             uint8_t functionIndex;
 
             switch (frameType) {
@@ -515,11 +508,6 @@ void Animator::renderNextFrame() {
 
 void Animator::processFrame(uint8_t frameIndex) {
     for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-
-        uint16_t ledNum = readUnsignedByte(&animationByteOffset); // led number // FIXME ledNum should be uint16_t
-        //Serial.print(ledNum, DEC);
-        //Serial.print("\n");
-
         uint8_t frameType = readUnsignedByte(&animationByteOffset);
 
         switch (frameType) {
