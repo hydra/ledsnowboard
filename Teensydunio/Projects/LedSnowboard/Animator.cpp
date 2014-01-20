@@ -445,12 +445,12 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
             uint8_t frameType = readUnsignedByte(&animationByteOffset);
 
             uint16_t valueAxisIndex = valueAxisOffset + valueAxisValue;
-
+#if 0
             Serial.print("ledNumber: ");
             Serial.print(ledNumber, DEC);
             Serial.print(", valueAxisIndex: ");
             Serial.print(valueAxisIndex, DEC);
-
+#endif
             uint8_t functionIndex;
 
             switch (frameType) {
@@ -460,8 +460,10 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
 					valueAxis->functionIndices[ledIndex][valueAxisIndex] = functionIndex;
 
 					if (valueAxis->functionIndices[ledIndex][valueAxisIndex] != 0) {
+#if 0
 						Serial.print(", function: ");
 						Serial.print(valueAxis->functionIndices[ledIndex][valueAxisIndex], DEC);
+#endif
 					}
 				break;
 				case FT_LINKED:
