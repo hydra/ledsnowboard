@@ -68,7 +68,6 @@ private:
 
     valueAxis_t *valueAxes;
 
-    //uint8_t valueAxisFunctionIndexes[COUNT_OF_LEDS_IN_ANIMATION][MAX_VALUES_IN_RANGE_USED_BY_ANIMATION];
     int32_t functionData[COUNT_OF_FUNCTIONS_IN_ANIMATION][COLOR_COMPONENT_COUNT];
 
     void initializeFunctionData(uint8_t functionCount, uint8_t colorComponentCount);

@@ -15,4 +15,6 @@
 #define USE_ANIMATION_1
 //#define USE_ANIMATION_2
 
+//#define DEBUG_ANIMATOR_CODEC
+
 #endif /* CONFIG_H_ */

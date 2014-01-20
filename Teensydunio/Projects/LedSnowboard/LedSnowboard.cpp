@@ -45,7 +45,7 @@ SdFat sd;
 SdFile myFile;
 SdFile animationFile;
 
-#define LEDS_PER_STRIP 2
+#define LEDS_PER_STRIP 30
 #define MEMORY_NEEDED_FOR_EACH_LED 6
 
 DMAMEM int displayMemory[LEDS_PER_STRIP * MEMORY_NEEDED_FOR_EACH_LED];
@@ -155,12 +155,22 @@ void onSdCardInserted() {
 
     showSdCardContents();
 
+#ifdef USE_ANIMATION_1
     Serial.print("Opening TEST1.ANI...");
     
     if (!animationFile.open("TEST1.ANI", O_RDONLY)) {
         sd.errorPrint("opening TEST1.ANI for read failed");
         return;
     }
+#endif
+#ifdef USE_ANIMATION_2
+    Serial.print("Opening TEST2.ANI...");
+
+    if (!animationFile.open("TEST2.ANI", O_RDONLY)) {
+        sd.errorPrint("opening TEST2.ANI for read failed");
+        return;
+    }
+#endif
     Serial.println("OK");
 
     fileReader.setSdFile(&animationFile);
