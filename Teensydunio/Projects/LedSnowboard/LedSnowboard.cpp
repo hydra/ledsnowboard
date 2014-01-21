@@ -202,7 +202,11 @@ void onSdCardInserted() {
     // setup leds and animation
     animator.readAnimationDetails(&fileReader);
 
+#ifdef OVERRIDE_ANIMATION_FREQUENCY
+    animationFrameAdvanceAction.setDelayMillis(1);
+#else
     animationFrameAdvanceAction.setDelayMillis(animator.timeAxisFrequencyMillis);
+#endif
     animationFrameAdvanceAction.reset();
 }
 
@@ -227,6 +231,12 @@ void updateAnimation() {
     if (!animationFrameAdvanceAction.isActionDue()) {
         return;
     }
+
+    /*
+    Serial.print("lateBy: ");
+    Serial.print(animationFrameAdvanceAction.getLateBy(), DEC);
+    Serial.println();
+    */
 
     animator.renderNextFrame();
     leds.show();
