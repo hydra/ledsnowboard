@@ -9,9 +9,11 @@
 
 #include <new.cpp>
 
-#include <OctoWS2811.h>
-#include "AccelGyro.h"
+#include "System.h"
 #include "Time.h"
+
+#include "AccelGyro.h"
+#include <OctoWS2811.h>
 
 #include "Animator.h"
 
@@ -20,9 +22,8 @@
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
-int8_t accelerometerValue;
-
-void showFreeRam(void);
+static int8_t accelerometerXValue;
+static int8_t accelerometerYValue;
 
 Animator::Animator(void) :
         hasAnimation(false),
@@ -136,36 +137,48 @@ int8_t Animator::readSignedByte(uint32_t* aPosition) {
 
 void Animator::initializeFunctionData(uint8_t colorComponentCount) {
     for (uint8_t i = 0; i < functionCount; i++) {
+#ifdef DEBUG_INITIALIZATION_OF_DATA
         Serial.print("Row: ");
         Serial.print(i, DEC);
         Serial.print(" - ");
+#endif
         for (uint8_t j = 0; j < colorComponentCount; j++) {
             functionData[i][j] = 0;
+#ifdef DEBUG_INITIALIZATION_OF_DATA
             Serial.print("#");
+#endif
         }
+#ifdef DEBUG_INITIALIZATION_OF_DATA
         Serial.println("..OK");
+#endif
     }
     Serial.println("functionData initialised");
 }
 
 void Animator::initializeFunctionIndices(ValueAxis *valueAxis) {
     for (uint16_t i = 0; i < ledCount; i++) {
+#ifdef DEBUG_INITIALIZATION_OF_DATA
         Serial.print("Row: ");
         Serial.print(i, DEC);
         Serial.print(" - ");
+#endif
         for (uint16_t j = 0; j < valueAxis->functionIndicesEntryCount; j++) {
 #if 0
             Serial.print((uint32_t)&valueAxis->functionIndices[i], HEX);
 #endif
             valueAxis->functionIndices[i][j] = 0;
+#ifdef DEBUG_INITIALIZATION_OF_DATA
             Serial.print("#");
+#endif
 #if 0
             Serial.print(": ");
             Serial.print(valueAxis->functionIndices[i][j], HEX);
             Serial.println();
 #endif
         }
+#ifdef DEBUG_INITIALIZATION_OF_DATA
         Serial.println("..OK");
+#endif
     }
     Serial.println("functionIndicies initialised");
 }
@@ -210,14 +223,8 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     Serial.println();
 
     valueAxes = (ValueAxis **)malloc(memoryToAllocate);
-
-    Serial.print("valueAxes: ");
-    Serial.print((uint32_t)valueAxes, HEX);
-    Serial.println();
-
-    if (!valueAxes) {
-        return;
-    }
+    verifyMemoryAllocation((void *)valueAxes);
+    showFreeRam();
 
     readTimeAxisHeader();
     
@@ -236,24 +243,43 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
 }
 
 void Animator::allocateFunctionData(void) {
-
-
     const size_t row_pointers_bytes = functionCount * sizeof *functionData;
     const size_t row_elements_bytes = COLOR_COMPONENT_COUNT * sizeof(int32_t);
-
-#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-    functionData = (int32_t **) malloc(row_pointers_bytes);
-    for(size_t i = 0; i < functionCount; i++) {
-        functionData[i] = (int32_t *) malloc(row_elements_bytes);
-    }
-#else
-    // FIXME is this really correct?
-
     const size_t memoryToAllocate = row_pointers_bytes + (functionCount * row_elements_bytes);
 
-    Serial.print("memoryToAllocate: ");
+    Serial.print("memoryToAllocate (rows, row pointer size, columns*row element size, total): ");
+    Serial.print(functionCount, DEC);
+    Serial.print(", ");
+    Serial.print(row_pointers_bytes, DEC);
+    Serial.print(", ");
+    Serial.print(COLOR_COMPONENT_COUNT, DEC);
+    Serial.print("*");
+    Serial.print(row_elements_bytes, DEC);
+    Serial.print(", ");
     Serial.print(memoryToAllocate, DEC);
     Serial.println();
+
+#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
+    Serial.print("memoryToAllocate (row pointers, row elements): (");
+    Serial.print(row_pointers_bytes, DEC);
+    Serial.print(", ");
+    Serial.print(row_elements_bytes, DEC);
+    Serial.println(")");
+
+    Serial.print("Allocating function data...");
+    functionData = (int32_t **) malloc(row_pointers_bytes);
+    verifyMemoryAllocation((void *)functionData);
+    Serial.println("OK");
+
+    Serial.print("Allocating function data rows: ");
+    for(size_t i = 0; i < functionCount; i++) {
+        functionData[i] = (int32_t *) malloc(row_elements_bytes);
+        verifyMemoryAllocation((void *)functionData[i]);
+        Serial.print("#");
+    }
+    Serial.println(" OK");
+#else
+    // FIXME is this really correct?
 
     functionData = (int32_t **) malloc(memoryToAllocate);
 
@@ -278,7 +304,7 @@ void Animator::allocateFunctionData(void) {
     }
 #endif
     Serial.println("functionData allocated");
-
+    showFreeRam();
 }
 
 uint32_t Animator::readUnsignedInt32(void) {
@@ -341,6 +367,18 @@ uint8_t applyIncrement(uint8_t colour, int32_t increment) {
     return colourBig;
 }
 
+int8_t determineValueAxisPosition(ValueAxis *valueAxis, uint8_t valueAxisIndex) {
+
+    // chose input source
+    if (valueAxisIndex & 0x1) {
+        return accelerometerYValue;
+    } else {
+        return accelerometerXValue;
+    }
+
+    // TODO translate accelerometer readings into a range >= valueAxisLowValue && <= valueAxisHighValue
+}
+
 void Animator::readAndSetColour(uint16_t ledIndex) {
     
     uint8_t red = readUnsignedByte(&animationByteOffset);
@@ -377,15 +415,24 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
         ValueAxis *currentValueAxis = valueAxes[valueAxisIndex];
 
+        int8_t valueAxisPosition = determineValueAxisPosition(currentValueAxis, valueAxisIndex);
+
+        if (ledIndex == 0) {
+            Serial.print("led 0 valueAxisIndex: ");
+            Serial.print(valueAxisIndex, DEC);
+            Serial.print(", valueAxisPosition: ");
+            Serial.print(valueAxisPosition, DEC);
+            Serial.println();
+        }
 
         int8_t start = 0;
         int8_t end = 0;
-        if (accelerometerValue < 0) {
-            start = accelerometerValue;
+        if (accelerometerXValue < 0) {
+            start = valueAxisPosition;
             end = currentValueAxis->valueAxisCentreValue;
-        } else if (accelerometerValue > 0) {
+        } else if (valueAxisPosition > 0) {
             start = currentValueAxis->valueAxisCentreValue + 1;
-            end = accelerometerValue + 1;
+            end = valueAxisPosition + 1;
         }
 
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
@@ -484,28 +531,36 @@ void Animator::allocateFunctionIndices(ValueAxis *valueAxis) {
 
     const size_t row_pointers_bytes = ledCount * sizeof *valueAxis->functionIndices;
     const size_t row_elements_bytes = valueAxis->functionIndicesEntryCount * sizeof(uint8_t);
-
-#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-    valueAxis->functionIndices = (uint8_t **) malloc(row_pointers_bytes);
-    for(size_t i = 0; i < ledCount; i++) {
-        valueAxis->functionIndices[i] = (uint8_t *) malloc(row_elements_bytes);
-        if (!valueAxis->functionIndices[i]) {
-            Serial.print("FAILED AT ");
-            Serial.print(i, DEC);
-            Serial.print(" - Could not allocate bytes: ");
-            Serial.print(row_elements_bytes, DEC);
-            Serial.println();
-            while(1) {};
-        }
-    }
-#else
-    // FIXME is this really correct?
-
     const size_t memoryToAllocate = row_pointers_bytes + (ledCount * row_elements_bytes);
 
-    Serial.print("memoryToAllocate: ");
+    Serial.print("memoryToAllocate (rows, row pointer size, columns*row element size, total): ");
+    Serial.print(ledCount, DEC);
+    Serial.print(", ");
+    Serial.print(row_pointers_bytes, DEC);
+    Serial.print(", ");
+    Serial.print(valueAxis->functionIndicesEntryCount, DEC);
+    Serial.print("*");
+    Serial.print(row_elements_bytes, DEC);
+    Serial.print(", ");
     Serial.print(memoryToAllocate, DEC);
     Serial.println();
+
+#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
+
+    Serial.print("Allocating function indices...");
+    valueAxis->functionIndices = (uint8_t **) malloc(row_pointers_bytes);
+    verifyMemoryAllocation((void *)valueAxis->functionIndices);
+    Serial.println("OK");
+
+    Serial.print("Allocating function indices rows: ");
+    for(size_t i = 0; i < ledCount; i++) {
+        valueAxis->functionIndices[i] = (uint8_t *) malloc(row_elements_bytes);
+        verifyMemoryAllocation((void *)valueAxis->functionIndices[i]);
+        Serial.print("#");
+    }
+    Serial.println(" OK");
+#else
+    // FIXME is this really correct?
 
     valueAxis->functionIndices = (uint8_t **) malloc(memoryToAllocate);
 
@@ -524,6 +579,7 @@ void Animator::allocateFunctionIndices(ValueAxis *valueAxis) {
     }
 #endif
     Serial.println("functionIndices allocated");
+    showFreeRam();
 }
 
 void Animator::readValueAxis(uint8_t valueAxisIndex) {
@@ -561,12 +617,13 @@ void Animator::readFunctionIndices(ValueAxis *valueAxis) {
     for (int8_t valueAxisValue = valueAxis->valueAxisLowValue; valueAxisValue <= valueAxis->valueAxisHighValue;
             valueAxisValue++) {
 
+#if 0
         Serial.print("valueAxisValue: ");
         Serial.print(valueAxisValue, DEC);
         Serial.print(", ledChunkOffset: ");
         Serial.print(animationByteOffset, HEX);
         Serial.println();
-
+#endif
 
         for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         	uint8_t frameType = readUnsignedByte(&animationByteOffset);
@@ -602,7 +659,10 @@ void Animator::readFunctionIndices(ValueAxis *valueAxis) {
 
 void Animator::renderNextFrame() {
 
-    accelerometerValue = accelGyro.getNormalisedAccelerometerXValue();
+    accelGyro.refresh();
+
+    accelerometerXValue = accelGyro.getNormalisedXValue();
+    accelerometerYValue = accelGyro.getNormalisedYValue();
 
 #if 0
     Serial.print("Processing frame: ");

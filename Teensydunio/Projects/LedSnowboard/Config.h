@@ -8,8 +8,17 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+/*
+ ** SPI_MOSI - pin 11
+ ** SPI_MISO - pin 12
+ ** SPI_CLK - pin 13
+*/
+#define SD_CD_PIN 9 // Card detect for SD card
+#define SD_CS 10 // Chip select for SD card
 
-#define LED_PIN 13
+// Define pin to use to drive a status LED
+#define TEENSY_LED_PIN 13
+#define CPU_STATUS_LED_PIN 17
 
 // Select your animation - they are mutually exclusive.
 //#define USE_ANIMATION_1
@@ -19,5 +28,8 @@
 
 // Uses more memory, but currently there may be memory memory errors if this is disabled.
 #define USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
+
+#define DEBUG_ALL_ACCEL_DATA
+//#define DEBUG_NORMALIZED_XY_ACCEL_DATA
 
 #endif /* CONFIG_H_ */

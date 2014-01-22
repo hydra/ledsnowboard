@@ -8,6 +8,7 @@
 #include <SdFatUtil.h>
 
 #include "Config.h"
+#include "System.h"
 #include "Time.h"
 
 #include "StatusLed.h"
@@ -20,23 +21,15 @@
 
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
-StatusLed statusLed(LED_PIN);
-AccelGyro accelGyro(statusLed);
+StatusLed earlyStartupStatusAndSdCardPresenceLed(TEENSY_LED_PIN);
+StatusLed cpuStatusLed(CPU_STATUS_LED_PIN);
+AccelGyro accelGyro(earlyStartupStatusAndSdCardPresenceLed);
 
 SdCardFileReader fileReader;
 Animator animator;
 
 ScheduledAction sdCardStatusAction;
 ScheduledAction serialStatusAction;
-
-
-/*
- ** MOSI - pin 11
- ** MISO - pin 12
- ** CLK - pin 13
-*/
-#define SD_CD_PIN 9 // Card detect for SD card
-#define SD_CS 10 // Chip select for SD card
 
 bool hasSdCard = false;
 bool previouslyHadSdCard = true;
@@ -48,12 +41,15 @@ SdFile animationFile;
 #define LEDS_PER_STRIP 30
 #define MEMORY_NEEDED_FOR_EACH_LED 6
 
+const int ledConfig = WS2811_GRB | WS2811_800kHz;
+
 DMAMEM int displayMemory[LEDS_PER_STRIP * MEMORY_NEEDED_FOR_EACH_LED];
+#ifdef USE_DRAWING_MEMORY_FOR_LEDS
 int drawingMemory[LEDS_PER_STRIP * MEMORY_NEEDED_FOR_EACH_LED];
-
-const int config = WS2811_GRB | WS2811_800kHz;
-
-OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, drawingMemory, config);
+OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, drawingMemory, ledConfig);
+#else
+OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, NULL, ledConfig);
+#endif
 
 void updateSdCardPresence(void) {
   previouslyHadSdCard = hasSdCard;
@@ -79,27 +75,9 @@ void showSdCardInsertionOrRemovalMessage() {
     }
 }
 
-uint32_t MyFreeRam(){ // for Teensy 3.0
-    uint32_t stackTop;
-    uint32_t heapTop;
-    // current position of the stack.
-    stackTop = (uint32_t) &stackTop;
-    // current position of heap.
-    void* hTop = malloc(1);
-    heapTop = (uint32_t) hTop;
-    free(hTop);
-    // The difference is the free, available ram.
-    return stackTop - heapTop;
-}
-
-void showFreeRam(void) {
-    Serial.print("Free: 0x");
-    Serial.print(MyFreeRam(), HEX);
-    Serial.println();
-}
-
 void setup() {
-    pinMode(LED_PIN, OUTPUT);
+    earlyStartupStatusAndSdCardPresenceLed.configure();
+    cpuStatusLed.configure();
       
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
       Wire.begin();
@@ -132,6 +110,10 @@ void setup() {
 
     showFreeRam();
 
+    // turn light on until SD card insertion disables it.
+    earlyStartupStatusAndSdCardPresenceLed.enable();
+
+
     Serial.print("FINISHED SETUP");
     Serial.print("\n");
 }
@@ -154,27 +136,36 @@ void showSdCardContents(void) {
 #endif
 
 void onSdCardInserted() {
-    Serial.print("Initializing SD card...");
+    earlyStartupStatusAndSdCardPresenceLed.configure();
+    earlyStartupStatusAndSdCardPresenceLed.disable();
 
     bool sdCardInitialised = false;
     uint8_t attemptsRemaining = 5;
-    while(attemptsRemaining--) {
+    while(attemptsRemaining) {
+        Serial.print("Reading SD card...");
         sdCardInitialised = sd.begin(SD_CS, SPI_FULL_SPEED);
         if (sdCardInitialised) {
             break;
         }
-
-        sd.initErrorPrint();
-        Serial.print("initialization failed, attemptsRemaining: ");
+        attemptsRemaining--;
+        Serial.print("failed, attemptsRemaining: ");
         Serial.print(attemptsRemaining, DEC);
         Serial.println();
-        delay(500);
+
+        sd.initErrorPrint();
+
+        if (attemptsRemaining) {
+            delay(500);
+            Serial.println("Retrying SD card");
+        }
     }
     if (!sdCardInitialised) {
         return;
     }
 
-    Serial.println("initialization done.");
+    Serial.println("OK");
+    showFreeRam();
+
 
 #if SHOW_SD_CARD_CONTENTS_ON_INSERTION
     showSdCardContents();
@@ -197,10 +188,13 @@ void onSdCardInserted() {
     }
 #endif
     Serial.println("OK");
+    showFreeRam();
+
 
     fileReader.setSdFile(&animationFile);
     // setup leds and animation
     animator.readAnimationDetails(&fileReader);
+    showFreeRam();
 
 #ifdef OVERRIDE_ANIMATION_FREQUENCY
     animationFrameAdvanceAction.setDelayMillis(1);
@@ -213,6 +207,8 @@ void onSdCardInserted() {
 void onSdCardRemoved(void) {
     animationFile.close();
     animator.reset();
+    earlyStartupStatusAndSdCardPresenceLed.configure();
+    earlyStartupStatusAndSdCardPresenceLed.enable();
 }
 
 void updateCpuActivityLed(void) {
@@ -220,7 +216,7 @@ void updateCpuActivityLed(void) {
     return;
   }
   
-  statusLed.toggle();
+  cpuStatusLed.toggle();
 }
 
 void updateAnimation() {

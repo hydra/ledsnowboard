@@ -20,7 +20,10 @@ public:
 
     MPU6050 impl;
 
-    signed int getNormalisedAccelerometerXValue();
+    signed int getNormalisedXValue();
+    signed int getNormalisedYValue();
+
+    void refresh();
 
 private:
     StatusLed statusLed;
@@ -28,12 +31,18 @@ private:
     int16_t ax, ay, az;
     int16_t gx, gy, gz;
 
+    int8_t x;
     int16_t minAx, maxAx, zeroAx;
 
+    int8_t y;
+    int16_t minAy, maxAy, zeroAy;
+
     bool isZeroAxInitialized;
+    bool isZeroAyInitialized;
 
-    void refresh();
 
+    void normalizeAx(void);
+    void normalizeAy(void);
 };
 
 #endif /* ACCELGYRO_H_ */

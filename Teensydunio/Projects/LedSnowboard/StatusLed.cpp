@@ -12,11 +12,10 @@
 StatusLed::StatusLed(unsigned int pin) :
     pin(pin)
 {
-    // TODO Auto-generated constructor stub
-
 }
 
 void StatusLed::configure() {
+    pinMode(pin, OUTPUT);
     disable();
 }
 

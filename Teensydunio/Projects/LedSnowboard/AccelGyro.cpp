@@ -11,14 +11,19 @@
 
 AccelGyro::AccelGyro(StatusLed statusLed) :
         statusLed(statusLed),
+        x(0),
         minAx(0),
         maxAx(0),
         zeroAx(0),
+        y(0),
+        minAy(0),
+        maxAy(0),
+        zeroAy(0),
         isZeroAxInitialized(false) {
 }
 
 void AccelGyro::configure() {
-    statusLed.disable();
+    statusLed.enable();
 
     // initialize device
     Serial.println("Initializing I2C devices...");
@@ -40,44 +45,140 @@ void AccelGyro::configure() {
         }
     }
 
-    statusLed.enable();
+    statusLed.disable();
+    refresh();
 }
 
-int AccelGyro::getNormalisedAccelerometerXValue() {
+int AccelGyro::getNormalisedYValue() {
+    return y;
+}
 
-    refresh();
+int AccelGyro::getNormalisedXValue() {
+    return x;
+}
 
+
+static int8_t normalizeValue(int16_t reading, int16_t minReading, int16_t maxReading, int16_t zeroReading) {
+
+    // FIXME clearly this is test code because it does not take into account the min/max/zero values
+    int16_t adjustedReading = reading - zeroReading;
+
+    for (int8_t r = -50; r <= 50; r++) {
+        int16_t rangeMin = abs(r) * 200;
+        int16_t rangeMax = (abs(r)+1) * 200;
+        if ((reading < zeroReading && r < -1) || (reading > zeroReading && r > 1)) {
+            if ((r == -50 || r == 50) && abs(adjustedReading) > rangeMax) {
+                return r;
+            }
+            if (abs(adjustedReading) > rangeMin && abs(adjustedReading) < rangeMax) {
+                return r;
+            }
+        }
+    }
+    return 0;
+}
+
+void AccelGyro::normalizeAx(void) {
     if (ax < minAx && ax < zeroAx - 200) {
-        minAx = ax;
-        Serial.print("new min :");
-        Serial.print(ax, DEC);
-        Serial.print("\n");
+        if (abs(ax) < (abs(minAx) * 10L)) { // avoid crazy readings
+            minAx = ax;
+            Serial.print("new x min :");
+            Serial.print(ax, DEC);
+            Serial.println();
+        }
     }
     if (ax > maxAx && ax > zeroAx + 200) {
-        maxAx = ax;
-        Serial.print("new max :");
-        Serial.print(ax, DEC);
-        Serial.print("\n");
+        if (abs(ax) < (abs(maxAx) * 10L)) { // avoid crazy readings
+            maxAx = ax;
+            Serial.print("new x max :");
+            Serial.print(ax, DEC);
+            Serial.println();
+        }
     }
 
-    if (ax > zeroAx + 200) {
-        return 1;
-    } else if (ax < zeroAx - 200) {
-        return -1;
-    } else {
-        return 0;
+    x = normalizeValue(ax, minAx, maxAx, zeroAx);
+}
+
+void AccelGyro::normalizeAy(void) {
+
+    if (ay < minAy && ay < zeroAy - 200) {
+        if (abs(ay) < (abs(minAy) * 10L)) { // avoid crazy readings
+            minAy = ay;
+            Serial.print("new y min:");
+            Serial.print(ay, DEC);
+            Serial.println();
+        }
     }
+    if (ay > maxAy && ay > zeroAy + 200) {
+        if (abs(ay) < (abs(maxAy) * 10L)) { // avoid crazy readings
+            maxAy = ay;
+            Serial.print("new y max :");
+            Serial.print(ay, DEC);
+            Serial.println();
+        }
+    }
+
+    y = normalizeValue(ay, minAy, maxAy, zeroAy);
 }
 
 void AccelGyro::refresh() {
     impl.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
     if (!isZeroAxInitialized) {
-        Serial.print("new zero :");
+        Serial.print("new x zero :");
         Serial.print(ax, DEC);
-        Serial.print("\n");
+        Serial.println();
         zeroAx = ax;
+        minAx = ax;
+        maxAx = ax;
 
         isZeroAxInitialized = true;
     }
+    if (!isZeroAyInitialized) {
+        Serial.print("new y zero :");
+        Serial.print(ay, DEC);
+        Serial.println();
+        zeroAy = ay;
+        minAy = ay;
+        maxAy = ay;
+
+        isZeroAyInitialized = true;
+    }
+    normalizeAx();
+    normalizeAy();
+
+#ifdef DEBUG_ALL_ACCEL_DATA
+    Serial.print("accel (rawX,rawY,rawZ) (minX,zeroX,maxX) (minY,zeroY,maxY) (x,y): ");
+    Serial.print(ax, DEC);
+    Serial.print(",");
+    Serial.print(ay, DEC);
+    Serial.print(",");
+    Serial.print(az, DEC);
+    Serial.print(" ");
+    Serial.print(minAx, DEC);
+    Serial.print(",");
+    Serial.print(zeroAx, DEC);
+    Serial.print(",");
+    Serial.print(maxAx, DEC);
+    Serial.print(" ");
+    Serial.print(minAy, DEC);
+    Serial.print(",");
+    Serial.print(zeroAy, DEC);
+    Serial.print(",");
+    Serial.print(maxAy, DEC);
+    Serial.print(" ");
+    Serial.print(x, DEC);
+    Serial.print(",");
+    Serial.print(y, DEC);
+    Serial.println();
+#endif
+
+#ifdef DEBUG_NORMALIZED_XY_ACCEL_DATA
+    Serial.print("accel (x,y): ");
+    Serial.print(x, DEC);
+    Serial.print(",");
+    Serial.print(y, DEC);
+    Serial.println();
+#endif
+
 }
