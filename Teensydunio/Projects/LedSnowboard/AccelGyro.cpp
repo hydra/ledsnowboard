@@ -148,37 +148,37 @@ void AccelGyro::refresh() {
     normalizeAy();
 
 #ifdef DEBUG_ALL_ACCEL_DATA
-    Serial.print("accel (rawX,rawY,rawZ) (minX,zeroX,maxX) (minY,zeroY,maxY) (x,y): ");
+    Serial.print("accel (rawX,rawY,rawZ) (minX,zeroX,maxX) (minY,zeroY,maxY) (x,y): (");
     Serial.print(ax, DEC);
     Serial.print(",");
     Serial.print(ay, DEC);
     Serial.print(",");
     Serial.print(az, DEC);
-    Serial.print(" ");
+    Serial.print(") (");
     Serial.print(minAx, DEC);
     Serial.print(",");
     Serial.print(zeroAx, DEC);
     Serial.print(",");
     Serial.print(maxAx, DEC);
-    Serial.print(" ");
+    Serial.print(") (");
     Serial.print(minAy, DEC);
     Serial.print(",");
     Serial.print(zeroAy, DEC);
     Serial.print(",");
     Serial.print(maxAy, DEC);
-    Serial.print(" ");
+    Serial.print(") (");
     Serial.print(x, DEC);
     Serial.print(",");
     Serial.print(y, DEC);
-    Serial.println();
+    Serial.println(")");
 #endif
 
 #ifdef DEBUG_NORMALIZED_XY_ACCEL_DATA
-    Serial.print("accel (x,y): ");
+    Serial.print("accel (x,y): (");
     Serial.print(x, DEC);
     Serial.print(",");
     Serial.print(y, DEC);
-    Serial.println();
+    Serial.println(")");
 #endif
 
 }
