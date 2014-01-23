@@ -427,7 +427,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
 
         int8_t start = 0;
         int8_t end = 0;
-        if (accelerometerXValue < 0) {
+        if (accelerometerValue < 0) {
             start = valueAxisPosition;
             end = currentValueAxis->valueAxisCentreValue;
         } else if (valueAxisPosition > 0) {
