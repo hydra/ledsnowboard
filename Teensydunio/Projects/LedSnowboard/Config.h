@@ -24,12 +24,14 @@
 //#define USE_ANIMATION_1
 #define USE_ANIMATION_2
 
-//#define DEBUG_ANIMATOR_CODEC
+//#define DEBUG_ANIMATOR_CODEC_LED_COLOURS
+//#define DEBUG_ANIMATOR_CODEC_VALUE_AXIS
+//#define DEBUG_ANIMATOR_CODEC_FINAL_INCREMENTS
 
 // Uses more memory, but currently there may be memory memory errors if this is disabled.
 #define USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
 
-#define DEBUG_ALL_ACCEL_DATA
+//#define DEBUG_ALL_ACCEL_DATA
 //#define DEBUG_NORMALIZED_XY_ACCEL_DATA
 
 #endif /* CONFIG_H_ */
