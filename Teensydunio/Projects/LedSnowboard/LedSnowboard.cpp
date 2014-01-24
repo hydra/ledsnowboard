@@ -15,21 +15,28 @@
 #include "AccelGyro.h"
 #include "Animator.h"
 #include "Animations.h"
+#include "Sampler.h"
+#include "SensorDataStore.h"
 
 #include "Scheduling/ScheduledAction.h"
 #include "File/SdCardFileReader.h"
 
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
+
 StatusLed earlyStartupStatusAndSdCardPresenceLed(TEENSY_LED_PIN);
 StatusLed cpuStatusLed(CPU_STATUS_LED_PIN);
-AccelGyro accelGyro(earlyStartupStatusAndSdCardPresenceLed);
+
+SensorDataStore sensorDataStore;
+Sampler sampler;
+AccelGyro accelGyro(earlyStartupStatusAndSdCardPresenceLed, sensorDataStore, sampler);
 
 SdCardFileReader fileReader;
 Animator animator;
 
 ScheduledAction sdCardStatusAction;
 ScheduledAction serialStatusAction;
+ScheduledAction gyroRefreshAction;
 
 bool hasSdCard = false;
 bool previouslyHadSdCard = true;
@@ -107,6 +114,9 @@ void setup() {
 
     serialStatusAction.setDelayMillis(1000L);
     serialStatusAction.reset();
+    
+    gyroRefreshAction.setDelayMillis(1000L / SAMPLE_FREQUENCY_HZ);
+    gyroRefreshAction.reset();
 
     showFreeRam();
 
@@ -264,9 +274,19 @@ void updateSerialStatus() {
     Serial.print(".");
 }
 
+
+void processGyro(void) {
+  if (!gyroRefreshAction.isActionDue()) {
+    return;
+  }
+
+  accelGyro.refresh();
+}
+
 void loop() {
     updateCpuActivityLed();
     updateSerialStatus();
+    processGyro();
     checkSdCardStatus();
 
     updateAnimation();

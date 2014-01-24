@@ -9,6 +9,8 @@
 
 #include <new.cpp>
 
+#include "Config.h"
+
 #include "System.h"
 #include "Time.h"
 
@@ -16,7 +18,6 @@
 #include <OctoWS2811.h>
 
 #include "Animator.h"
-
 #include "Animations.h"
 
 extern OctoWS2811 leds;

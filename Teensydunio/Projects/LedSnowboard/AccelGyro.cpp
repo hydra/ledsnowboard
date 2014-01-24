@@ -9,8 +9,10 @@
 
 #include "AccelGyro.h"
 
-AccelGyro::AccelGyro(StatusLed statusLed) :
+AccelGyro::AccelGyro(StatusLed statusLed, SensorDataStore sensorDataStore, Sampler sampler) :
         statusLed(statusLed),
+        sensorDataStore(sensorDataStore),
+        sampler(sampler),
         x(0),
         minAx(0),
         maxAx(0),
@@ -79,6 +81,7 @@ static int8_t normalizeValue(int16_t reading, int16_t minReading, int16_t maxRea
 }
 
 void AccelGyro::normalizeAx(void) {
+    int16_t ax = sensorDataStore.sampledAccelerationData.x;
     if (ax < minAx && ax < zeroAx - 200) {
         if (abs(ax) < (abs(minAx) * 10L)) { // avoid crazy readings
             minAx = ax;
@@ -101,6 +104,7 @@ void AccelGyro::normalizeAx(void) {
 
 void AccelGyro::normalizeAy(void) {
 
+    int16_t ay = sensorDataStore.sampledAccelerationData.y;
     if (ay < minAy && ay < zeroAy - 200) {
         if (abs(ay) < (abs(minAy) * 10L)) { // avoid crazy readings
             minAy = ay;
@@ -122,9 +126,30 @@ void AccelGyro::normalizeAy(void) {
 }
 
 void AccelGyro::refresh() {
-    impl.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    impl.getAcceleration(&sensorDataStore.rawAccelerationData.x, &sensorDataStore.rawAccelerationData.y, &sensorDataStore.rawAccelerationData.z);
+    
+    sampler.addAccelerationData(sensorDataStore.rawAccelerationData);
+    if (!sampler.isReady()) {
+        return;
+    }
+    
+    sensorDataStore.sampledAccelerationData = sampler.getSample();
+
+#ifdef LOG_SAMPLE
+    Serial.print(", x: ");
+    Serial.print(sensorDataStore.sampledAccelerationData.x);
+    Serial.print("\t, y: ");
+    Serial.print(sensorDataStore.sampledAccelerationData.y);
+    Serial.print("\t, z: ");
+    Serial.println(sensorDataStore.sampledAccelerationData.z);
+#endif
+
+    sampler.prepareForUpdate();
+    
 
     if (!isZeroAxInitialized) {
+
+        int16_t ax = sensorDataStore.sampledAccelerationData.x;
         Serial.print("new x zero :");
         Serial.print(ax, DEC);
         Serial.println();
@@ -135,6 +160,8 @@ void AccelGyro::refresh() {
         isZeroAxInitialized = true;
     }
     if (!isZeroAyInitialized) {
+
+        int16_t ay = sensorDataStore.sampledAccelerationData.y;
         Serial.print("new y zero :");
         Serial.print(ay, DEC);
         Serial.println();
@@ -149,11 +176,11 @@ void AccelGyro::refresh() {
 
 #ifdef DEBUG_ALL_ACCEL_DATA
     Serial.print("accel (rawX,rawY,rawZ) (minX,zeroX,maxX) (minY,zeroY,maxY) (x,y): (");
-    Serial.print(ax, DEC);
+    Serial.print(sensorDataStore.sampledAccelerationData.x, DEC);
     Serial.print(",");
-    Serial.print(ay, DEC);
+    Serial.print(sensorDataStore.sampledAccelerationData.y, DEC);
     Serial.print(",");
-    Serial.print(az, DEC);
+    Serial.print(sensorDataStore.sampledAccelerationData.z, DEC);
     Serial.print(") (");
     Serial.print(minAx, DEC);
     Serial.print(",");
