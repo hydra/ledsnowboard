@@ -364,7 +364,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
 
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
 
-            uint16_t valueAxisValueIndex = (-start) + valueAxisValue; // FIXME verify this is correct
+            uint16_t valueAxisValueIndex = (-currentValueAxis->valueAxisLowValue) + valueAxisValue; // FIXME verify this is correct
 
             int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisValueIndex];
 
