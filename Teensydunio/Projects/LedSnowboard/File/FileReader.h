@@ -10,6 +10,7 @@
 
 class FileReader {
 public:
+    virtual ~FileReader(void) = 0;
     virtual byte readByte(void) = 0;
     virtual void seek(uint32_t position) = 0;
 };

@@ -17,6 +17,9 @@ SdCardFileReader::SdCardFileReader() :
     byteBuffer(0) { 
 }
 
+SdCardFileReader::~SdCardFileReader(void) {
+}
+
 void SdCardFileReader::setSdFile(SdFile *_sdFile) {
     sdFile = _sdFile;
 }

@@ -13,6 +13,7 @@
 class SdCardFileReader: public FileReader {
 public:
     SdCardFileReader();
+    virtual ~SdCardFileReader();
     void setSdFile(SdFile *sdFile);
     virtual byte readByte(void);
     virtual void seek(uint32_t position);
