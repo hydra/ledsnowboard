@@ -8,15 +8,31 @@
 #ifndef VALUEAXIS_H_
 #define VALUEAXIS_H_
 
+#include "AnimationReader.h"
+
 class ValueAxis {
 public:
-    ValueAxis();
+    ValueAxis(uint16_t ledCount, AnimationReader *animationReader);
+    virtual ~ValueAxis(void);
 
+    uint16_t ledCount;
+    
+    uint8_t **functionIndices;
+    uint16_t functionIndicesEntryCount;
+    
     int8_t valueAxisLowValue;
     int8_t valueAxisHighValue;
     int8_t valueAxisCentreValue;
-    uint8_t **functionIndices;
-    uint16_t functionIndicesEntryCount;
+    
+    void initialise(void);
+    
+private:
+    void allocateFunctionIndices(void);
+    void initializeFunctionIndices(void);
+    void readFunctionIndices(void);
+    
+    AnimationReader *animationReader; 
+    
 };
 
 #endif /* VALUEAXIS_H_ */

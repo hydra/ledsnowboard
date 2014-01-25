@@ -11,10 +11,12 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "StatusLed.h"
+#include "SensorDataStore.h"
+#include "Sampler.h"
 
 class AccelGyro {
 public:
-    AccelGyro(StatusLed statusLed);
+    AccelGyro(StatusLed statusLed, SensorDataStore sensorDataStor, Sampler sampler);
 
     void configure();
 
@@ -27,9 +29,8 @@ public:
 
 private:
     StatusLed statusLed;
-
-    int16_t ax, ay, az;
-    int16_t gx, gy, gz;
+    SensorDataStore sensorDataStore;
+    Sampler sampler;
 
     int8_t x;
     int16_t minAx, maxAx, zeroAx;
