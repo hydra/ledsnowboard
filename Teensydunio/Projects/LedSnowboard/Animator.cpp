@@ -20,6 +20,7 @@
 #include "Animator.h"
 #include "Animations.h"
 #include "FrameType.h"
+#include "ScaleMath.h"
 
 
 extern OctoWS2811 leds;
@@ -444,6 +445,12 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     }
 #endif
 
+#ifdef APPLY_BRIGHTNESS_HACK
+    red = scaleRange(red, 0x00, 0xff, 0x00, BRIGHTNESS_MAX);
+    green = scaleRange(green, 0x00, 0xff, 0x00, BRIGHTNESS_MAX);
+    blue = scaleRange(blue, 0x00, 0xff, 0x00, BRIGHTNESS_MAX);
+#endif
+    
     leds.setPixel(ledIndex, red, green, blue);
 }
 
