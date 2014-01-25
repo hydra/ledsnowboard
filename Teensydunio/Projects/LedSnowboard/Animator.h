@@ -11,14 +11,10 @@
 #include "Animations.h"
 
 #include "File/FileReader.h"
+#include "AnimationReader.h"
 #include "ValueAxis.h"
 
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
-
-// Frame Types
-#define FT_COLOUR 1
-#define FT_FUNCTION 2
-#define FT_LINKED 3
 
 #define INITIAL_LED 1
 
@@ -38,15 +34,13 @@ public:
 private:
     bool hasAnimation;
     FileReader *fileReader;
+    AnimationReader *animationReader;
     
-    uint32_t animationByteOffset;
     uint32_t animationByteOffsetOfFirstFrame;
 
     uint8_t valueAxisCount;
     uint16_t ledCount;
     uint8_t functionCount;
-
-    uint16_t valueAxisOffset;
 
     uint8_t timeAxisLowValue;
     uint8_t timeAxisHighValue;
@@ -73,11 +67,6 @@ private:
     void readValueAxis(uint8_t valueAxisIndex);
     void processFrame(uint8_t frameIndex);
     void beginReadAxisHeader(void);
-    
-    uint32_t readUnsignedInt32(void);
-    uint8_t readUnsignedByte(uint32_t* aPosition);
-    int8_t readSignedByte(uint32_t* aPosition);
-
 };
 
 #endif /* ANIMATOR_H_ */

@@ -32,9 +32,10 @@
 #define SAMPLE_STEP 4
 //#define LOG_SAMPLE
 
+//#define OVERRIDE_ANIMATION_FREQUENCY
 
 //#define DEBUG_ANIMATOR_CODEC_LED_COLOURS
-//#define DEBUG_ANIMATOR_CODEC_VALUE_AXIS
+#define DEBUG_ANIMATOR_CODEC_VALUE_AXIS
 //#define DEBUG_ANIMATOR_CODEC_FINAL_INCREMENTS
 
 // Uses more memory, but currently there may be memory memory errors if this is disabled.

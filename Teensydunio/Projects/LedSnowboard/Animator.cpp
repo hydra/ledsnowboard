@@ -19,6 +19,8 @@
 
 #include "Animator.h"
 #include "Animations.h"
+#include "FrameType.h"
+
 
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
@@ -28,6 +30,8 @@ static int8_t accelerometerYValue;
 
 Animator::Animator(void) :
         hasAnimation(false),
+        fileReader(NULL),
+        animationReader(NULL),
         valueAxes(NULL) {
 }
 
@@ -67,14 +71,11 @@ void Animator::reset(void) {
         valueAxes = 0;
     }
 
-    animationByteOffset = 0;
     animationByteOffsetOfFirstFrame = 0;
 
     valueAxisCount = 0;
     ledCount = 0;
     functionCount = 0;
-
-    valueAxisOffset = 0;
 
     timeAxisLowValue = 0;
     timeAxisHighValue = 0;
@@ -84,57 +85,13 @@ void Animator::reset(void) {
     backgroundColourRed = 0;
     backgroundColourGreen = 0;
     backgroundColourBlue = 0;
-}
-
-#ifdef USE_OLD_FILE_FORMAT_WITH_ESCAPING
-
-#define ESCAPE_BYTE 0x02
-#define XOR_BYTE 0x20
-
-uint8_t Animator::readUnsignedByte(uint32_t* aPosition) {
-    fileReader->seek(*aPosition);
-    unsigned char readByte = (unsigned char)fileReader->readByte();
-    (*(aPosition))++;
-
-    if (readByte == ESCAPE_BYTE) {
-        readByte = (unsigned char)fileReader->readByte();
-        (*(aPosition))++;
-        readByte = readByte ^ XOR_BYTE;
+    
+    if (animationReader) {
+        delete animationReader;
+        animationReader = NULL;
     }
-
-    return readByte;
 }
 
-int8_t Animator::readSignedByte(uint32_t* aPosition) {
-    fileReader->seek(*aPosition);
-    signed char readByte = (signed char)fileReader->readByte();
-    (*(aPosition))++;
-
-    if (readByte == ESCAPE_BYTE) {
-        readByte =  (signed char)fileReader->readByte();
-        (*(aPosition))++;
-        readByte = readByte ^ XOR_BYTE;
-    }
-
-    return readByte;
-}
-#else
-uint8_t Animator::readUnsignedByte(uint32_t* aPosition) {
-    fileReader->seek(*aPosition);
-    unsigned char readByte = (unsigned char)fileReader->readByte();
-    (*(aPosition))++;
-
-    return readByte;
-}
-
-int8_t Animator::readSignedByte(uint32_t* aPosition) {
-    fileReader->seek(*aPosition);
-    signed char readByte = (signed char)fileReader->readByte();
-    (*(aPosition))++;
-
-    return readByte;
-}
-#endif
 
 void Animator::initializeFunctionData(uint8_t colorComponentCount) {
     for (uint8_t i = 0; i < functionCount; i++) {
@@ -156,51 +113,23 @@ void Animator::initializeFunctionData(uint8_t colorComponentCount) {
     Serial.println("functionData initialised");
 }
 
-void Animator::initializeFunctionIndices(ValueAxis *valueAxis) {
-    for (uint16_t i = 0; i < ledCount; i++) {
-#ifdef DEBUG_INITIALIZATION_OF_DATA
-        Serial.print("Row: ");
-        Serial.print(i, DEC);
-        Serial.print(" - ");
-#endif
-        for (uint16_t j = 0; j < valueAxis->functionIndicesEntryCount; j++) {
-#if 0
-            Serial.print((uint32_t)&valueAxis->functionIndices[i], HEX);
-#endif
-            valueAxis->functionIndices[i][j] = 0;
-#ifdef DEBUG_INITIALIZATION_OF_DATA
-            Serial.print("#");
-#endif
-#if 0
-            Serial.print(": ");
-            Serial.print(valueAxis->functionIndices[i][j], HEX);
-            Serial.println();
-#endif
-        }
-#ifdef DEBUG_INITIALIZATION_OF_DATA
-        Serial.println("..OK");
-#endif
-    }
-    Serial.println("functionIndicies initialised");
-}
-
 void Animator::readAnimationDetails(FileReader *_fileReader) {
     fileReader = _fileReader;
-    animationByteOffset = 0;
+    animationReader = new AnimationReader(fileReader);
 
-    if (readUnsignedByte(&animationByteOffset) != HEADER_BYTE) {
-        //throw new InvalidAnimationException("No header byte");
+    if (animationReader->readUnsignedByte() != HEADER_BYTE) {
+        return;
     }
 
-    uint8_t ledCountHigh = readUnsignedByte(&animationByteOffset);
-    uint8_t ledCountLow = readUnsignedByte(&animationByteOffset);
+    uint8_t ledCountHigh = animationReader->readUnsignedByte();
+    uint8_t ledCountLow = animationReader->readUnsignedByte();
 
     ledCount = ledCountHigh |= ledCountLow << 8;
     Serial.print("led count is ");
     Serial.print(ledCount, DEC);
     Serial.println();
 
-    functionCount = readUnsignedByte(&animationByteOffset);
+    functionCount = animationReader->readUnsignedByte();
     Serial.print("function count is ");
     Serial.print(functionCount, DEC);
     Serial.println();
@@ -212,7 +141,7 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
         readFunctionData(functionIndex);
     }
 
-    valueAxisCount = readUnsignedByte(&animationByteOffset);
+    valueAxisCount = animationReader->readUnsignedByte();
     Serial.print("value axis count is ");
     Serial.print(valueAxisCount, DEC);
     Serial.println();
@@ -231,12 +160,12 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     
     for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
             valueAxisIndex++) {
-        ValueAxis *valueAxis = new ValueAxis();
+        ValueAxis *valueAxis = new ValueAxis(ledCount, animationReader);
         valueAxes[valueAxisIndex] = valueAxis;
         readValueAxis(valueAxisIndex);
     }
     
-    animationByteOffsetOfFirstFrame = animationByteOffset;
+    animationByteOffsetOfFirstFrame = animationReader->getPosition();
 
     frameIndex = timeAxisLowValue;
 
@@ -308,26 +237,11 @@ void Animator::allocateFunctionData(void) {
     showFreeRam();
 }
 
-uint32_t Animator::readUnsignedInt32(void) {
-
-    uint8_t red1 = readUnsignedByte(&animationByteOffset);
-    uint8_t red2 = readUnsignedByte(&animationByteOffset);
-    uint8_t red3 = readUnsignedByte(&animationByteOffset);
-    uint8_t red4 = readUnsignedByte(&animationByteOffset);
-
-    uint32_t r = red1;
-    r |= red2 << 8;
-    r |= red3 << 16;
-    r |= red4 << 24;
-
-    return r;
-}
-
 void Animator::readFunctionData(uint8_t functionIndex) {
 
-    int32_t redIncrement = readUnsignedInt32();
-    int32_t greenIncrement = readUnsignedInt32();
-    int32_t blueIncrement = readUnsignedInt32();
+    int32_t redIncrement = animationReader->readUnsignedInt32();
+    int32_t greenIncrement = animationReader->readUnsignedInt32();
+    int32_t blueIncrement = animationReader->readUnsignedInt32();
 
     Serial.print("Increments (r,g,b):");
     Serial.print(redIncrement, DEC);
@@ -383,9 +297,9 @@ int8_t determineValueAxisPosition(ValueAxis *valueAxis, uint8_t valueAxisIndex) 
 
 void Animator::readAndSetColour(uint16_t ledIndex) {
     
-    uint8_t red = readUnsignedByte(&animationByteOffset);
-    uint8_t green = readUnsignedByte(&animationByteOffset);
-    uint8_t blue = readUnsignedByte(&animationByteOffset);
+    uint8_t red = animationReader->readUnsignedByte();
+    uint8_t green = animationReader->readUnsignedByte();
+    uint8_t blue = animationReader->readUnsignedByte();
 
 #ifdef DEBUG_ANIMATOR_CODEC_LED_COLOURS
     if (ledIndex == 0) {
@@ -448,7 +362,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
 #endif
 
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
-            uint16_t valueAxisValueIndex = valueAxisOffset + valueAxisValue;
+
+            uint16_t valueAxisValueIndex = (-start) + valueAxisValue; // FIXME verify this is correct
 
             int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisValueIndex];
 
@@ -533,33 +448,33 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
 }
 
 void Animator::beginReadAxisHeader(void) {
-	uint8_t axisType = readUnsignedByte(&animationByteOffset);
-	uint8_t priority = readUnsignedByte(&animationByteOffset);
-    bool opaque = readUnsignedByte(&animationByteOffset);
+	uint8_t axisType = animationReader->readUnsignedByte();
+	uint8_t priority = animationReader->readUnsignedByte();
+    bool opaque = animationReader->readUnsignedByte();
 }
 
 void Animator::readTimeAxisHeader(void) {
     beginReadAxisHeader();
 
-    timeAxisLowValue = readUnsignedByte(&animationByteOffset);
+    timeAxisLowValue = animationReader->readUnsignedByte();
     Serial.print("time axis low value : ");
     Serial.print(timeAxisLowValue, DEC);
     Serial.println();
-    timeAxisHighValue = readUnsignedByte(&animationByteOffset);
+    timeAxisHighValue = animationReader->readUnsignedByte();
     Serial.print("time axis high value : ");
     Serial.print(timeAxisHighValue, DEC);
     Serial.println();
-    timeAxisFrequencyMillis = readUnsignedByte(&animationByteOffset);  // FIXME should be uint16_t
+    timeAxisFrequencyMillis = animationReader->readUnsignedByte();  // FIXME should be uint16_t
     Serial.print("time axis speed : ");
     Serial.print(timeAxisFrequencyMillis, DEC);
     Serial.println();
 
-    hasBackgroundColour = readUnsignedByte(&animationByteOffset);
+    hasBackgroundColour = animationReader->readUnsignedByte();
     if (hasBackgroundColour) {
         Serial.print("background colour : ");
-        backgroundColourRed = readUnsignedByte(&animationByteOffset);
-        backgroundColourGreen = readUnsignedByte(&animationByteOffset);
-        backgroundColourBlue = readUnsignedByte(&animationByteOffset);
+        backgroundColourRed = animationReader->readUnsignedByte();
+        backgroundColourGreen = animationReader->readUnsignedByte();
+        backgroundColourBlue = animationReader->readUnsignedByte();
 
         Serial.print(backgroundColourRed, HEX);
         Serial.print(" ");
@@ -570,147 +485,15 @@ void Animator::readTimeAxisHeader(void) {
     }
 }
 
-void Animator::allocateFunctionIndices(ValueAxis *valueAxis) {
-    valueAxis->functionIndicesEntryCount = -valueAxis->valueAxisLowValue + valueAxis->valueAxisHighValue;
-    if (
-        valueAxis->valueAxisCentreValue != valueAxis->valueAxisLowValue
-        &&
-        valueAxis->valueAxisCentreValue != valueAxis->valueAxisHighValue
-    ) {
-        valueAxis->functionIndicesEntryCount++;
-    }
-
-    Serial.print("functionIndicesEntryCount: ");
-    Serial.print(valueAxis->functionIndicesEntryCount, DEC);
-    Serial.println();
-
-    const size_t row_pointers_bytes = ledCount * sizeof *valueAxis->functionIndices;
-    const size_t row_elements_bytes = valueAxis->functionIndicesEntryCount * sizeof(uint8_t);
-    const size_t memoryToAllocate = row_pointers_bytes + (ledCount * row_elements_bytes);
-
-    Serial.print("memoryToAllocate (rows, row pointer size, columns*row element size, total): ");
-    Serial.print(ledCount, DEC);
-    Serial.print(", ");
-    Serial.print(row_pointers_bytes, DEC);
-    Serial.print(", ");
-    Serial.print(valueAxis->functionIndicesEntryCount, DEC);
-    Serial.print("*");
-    Serial.print(row_elements_bytes, DEC);
-    Serial.print(", ");
-    Serial.print(memoryToAllocate, DEC);
-    Serial.println();
-
-#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-
-    Serial.print("Allocating function indices...");
-    valueAxis->functionIndices = (uint8_t **) malloc(row_pointers_bytes);
-    verifyMemoryAllocation((void *)valueAxis->functionIndices);
-    Serial.println("OK");
-
-    Serial.print("Allocating function indices rows: ");
-    for(size_t i = 0; i < ledCount; i++) {
-        valueAxis->functionIndices[i] = (uint8_t *) malloc(row_elements_bytes);
-        verifyMemoryAllocation((void *)valueAxis->functionIndices[i]);
-        Serial.print("#");
-    }
-    Serial.println(" OK");
-#else
-    // FIXME is this really correct?
-
-    valueAxis->functionIndices = (uint8_t **) malloc(memoryToAllocate);
-
-    Serial.print("valueAxis->functionIndices: ");
-    Serial.print((uint32_t)valueAxis->functionIndices, HEX);
-    Serial.println();
-
-    uint8_t *data = (uint8_t *)valueAxis->functionIndices + sizeof(uint8_t*) * ledCount;
-    for(size_t i = 0; i < ledCount; i++) {
-        valueAxis->functionIndices[i] = data + i * valueAxis->functionIndicesEntryCount;
-        Serial.print("functionIndices[");
-        Serial.print(i, DEC);
-        Serial.print("]: ");
-        Serial.print((uint32_t)valueAxis->functionIndices[i], HEX);
-        Serial.println();
-    }
-#endif
-    Serial.println("functionIndices allocated");
-    showFreeRam();
-}
-
 void Animator::readValueAxis(uint8_t valueAxisIndex) {
+    
+    beginReadAxisHeader();
 
     ValueAxis *valueAxis = valueAxes[valueAxisIndex];
 
-    beginReadAxisHeader();
-
-    valueAxis->valueAxisLowValue = readSignedByte(&animationByteOffset);
-    Serial.print("value axis low value : ");
-    Serial.print(valueAxis->valueAxisLowValue, DEC);
-    Serial.println();
-    valueAxis->valueAxisHighValue = readSignedByte(&animationByteOffset);
-    Serial.print("value axis high value : ");
-    Serial.print(valueAxis->valueAxisHighValue, DEC);
-    Serial.println();
-    valueAxis->valueAxisCentreValue = readSignedByte(&animationByteOffset);
-    Serial.print("value axis zero value : ");
-    Serial.print(valueAxis->valueAxisCentreValue, DEC);
-    Serial.println();
-
-    allocateFunctionIndices(valueAxis);
-
-    initializeFunctionIndices(valueAxis);
-
-    readFunctionIndices(valueAxis);
+    valueAxis->initialise();
 }
 
-void Animator::readFunctionIndices(ValueAxis *valueAxis) {
-    valueAxisOffset = -valueAxis->valueAxisLowValue;
-    Serial.print("valueAxisOffset: ");
-    Serial.print(valueAxisOffset, DEC);
-    Serial.println();
-
-    for (int8_t valueAxisValue = valueAxis->valueAxisLowValue; valueAxisValue <= valueAxis->valueAxisHighValue;
-            valueAxisValue++) {
-
-#if 0
-        Serial.print("valueAxisValue: ");
-        Serial.print(valueAxisValue, DEC);
-        Serial.print(", ledChunkOffset: ");
-        Serial.print(animationByteOffset, HEX);
-        Serial.println();
-#endif
-
-        for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        	uint8_t frameType = readUnsignedByte(&animationByteOffset);
-
-            uint16_t valueAxisIndex = valueAxisOffset + valueAxisValue;
-
-            uint8_t functionIndex;
-
-            switch (frameType) {
-				case FT_FUNCTION:
-
-					functionIndex = readUnsignedByte(&animationByteOffset);
-					valueAxis->functionIndices[ledIndex][valueAxisIndex] = functionIndex;
-
-#if 0
-					if (valueAxis->functionIndices[ledIndex][valueAxisIndex] != 0) {
-						Serial.print(", function: ");
-						Serial.print(valueAxis->functionIndices[ledIndex][valueAxisIndex], DEC);
-					}
-#endif
-				break;
-				case FT_LINKED:
-					functionIndex = 255;
-					valueAxis->functionIndices[ledIndex][valueAxisIndex] = functionIndex;
-				break;
-            }
-#if 0
-            Serial.println();
-#endif
-        }
-    }
-}
 
 void Animator::renderNextFrame() {
 
@@ -737,13 +520,13 @@ void Animator::renderNextFrame() {
         
         // rewind after last frame
         frameIndex = timeAxisLowValue;
-        animationByteOffset = animationByteOffsetOfFirstFrame;
+        animationReader->seek(animationByteOffsetOfFirstFrame);
     }
 }
 
 void Animator::processFrame(uint8_t frameIndex) {
     for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        uint8_t frameType = readUnsignedByte(&animationByteOffset);
+        uint8_t frameType = animationReader->readUnsignedByte();
 
         switch (frameType) {
             case FT_FUNCTION:
