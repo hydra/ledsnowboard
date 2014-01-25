@@ -48,14 +48,63 @@ void ValueAxis::initialise(void) {
     Serial.print(valueAxisCentreValue, DEC);
     Serial.println();
 
-    allocateFunctionIndices();
+    allocateFunctionRanges();
 
-    initializeFunctionIndices();
+    readFunctionRanges();
 
-    readFunctionIndices();
+    //allocateFunctionIndices();
+
+    //initializeFunctionIndices();
+
+    //readFunctionIndices();
 
 }
 
+void ValueAxis::allocateFunctionRanges(void) {
+    const size_t row_pointers_bytes = ledCount * sizeof *functionIndices;
+
+#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
+
+    Serial.print("Allocating function indices...");
+    functionIndices = (uint8_t **) malloc(row_pointers_bytes);
+    verifyMemoryAllocation((void *)functionIndices);
+    Serial.println("OK");
+
+    Serial.print("Allocating function indices rows: ");
+    for(size_t i = 0; i < ledCount; i++) {
+        uint8_t numRanges = animationReader->readUnsignedByte();
+        size_t row_elements_bytes = numRanges * sizeof(FunctionRange);
+
+        functionIndices[i] = (uint8_t *) malloc(row_elements_bytes);
+        verifyMemoryAllocation((void *)functionIndices[i]);
+        Serial.print("#");
+    }
+    Serial.println(" OK");
+#else
+    // FIXME we are fucked
+
+
+
+#endif
+
+}
+
+void ValueAxis::readFunctionRanges(void) {
+	for(size_t i = 0; i < ledCount; i++) {
+		uint8_t numRanges = animationReader->readUnsignedByte();
+		for(size_t i = 0; i < numRanges; i++) {
+			int8_t lowValue = animationReader->readSignedByte();
+			int8_t highValue = animationReader->readUnsignedByte();
+			int8_t anchorValue = animationReader->readUnsignedByte();
+			uint8_t functionNum = animationReader->readUnsignedByte();
+
+			functionIndices[i][0 + i] = lowValue;
+			functionIndices[i][1 + i] = highValue;
+			functionIndices[i][2 + i] = anchorValue;
+			functionIndices[i][3 + i] = functionNum;
+		}
+	}
+}
 
 void ValueAxis::allocateFunctionIndices(void) {
     functionIndicesEntryCount = -valueAxisLowValue + valueAxisHighValue;

@@ -31,6 +31,9 @@ private:
     void initializeFunctionIndices(void);
     void readFunctionIndices(void);
     
+    void allocateFunctionRanges(void);
+    void readFunctionRanges(void);
+
     AnimationReader *animationReader; 
     
 };
