@@ -59,13 +59,8 @@ void Animator::reset(void) {
             if (!valueAxis) {
                 continue;
             }
-#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-            for (uint16_t functionIndicesEntryIndex = 0; functionIndicesEntryIndex < valueAxis->functionIndicesEntryCount; functionIndicesEntryIndex++) {
-                free(valueAxis->functionIndices[functionIndicesEntryIndex]);
-            }
-#endif
-            free(valueAxis->functionIndices);
             delete valueAxis;
+            
             valueAxes[valueAxisIndex] = 0;
         }
         free(valueAxes);

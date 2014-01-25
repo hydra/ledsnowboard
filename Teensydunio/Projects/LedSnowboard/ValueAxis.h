@@ -13,6 +13,7 @@
 class ValueAxis {
 public:
     ValueAxis(uint16_t ledCount, AnimationReader *animationReader);
+    virtual ~ValueAxis(void);
 
     uint16_t ledCount;
     

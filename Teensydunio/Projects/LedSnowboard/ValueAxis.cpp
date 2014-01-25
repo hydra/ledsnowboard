@@ -22,6 +22,17 @@ ValueAxis::ValueAxis(uint16_t _ledCount, AnimationReader *_animationReader) :
 {
 }
 
+ValueAxis::~ValueAxis(void) {
+    if (functionIndices) {
+#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
+        for (uint16_t functionIndicesEntryIndex = 0; functionIndicesEntryIndex < functionIndicesEntryCount; functionIndicesEntryIndex++) {
+            free(functionIndices[functionIndicesEntryIndex]);
+        }
+#endif
+        free(functionIndices);
+    }
+}
+
 void ValueAxis::initialise(void) {
 
     valueAxisLowValue = animationReader->readSignedByte();
@@ -193,5 +204,4 @@ void ValueAxis::readFunctionIndices(void) {
         }
     }
 }
-
 
