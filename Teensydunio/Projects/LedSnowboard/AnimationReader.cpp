@@ -71,21 +71,14 @@ int8_t AnimationReader::readSignedByte(void) {
 }
 #endif
 
-
 uint32_t AnimationReader::readUnsignedInt32(void) {
 
-    // TODO optimize this to use a single uint32_t, just shift the bits in as they are read
-    uint8_t b1 = readUnsignedByte();
-    uint8_t b2 = readUnsignedByte();
-    uint8_t b3 = readUnsignedByte();
-    uint8_t b4 = readUnsignedByte();
+    uint32_t result = readUnsignedByte();
+    result |= readUnsignedByte() << 8;
+    result |= readUnsignedByte() << 16;
+    result |= readUnsignedByte() << 24;
     
     position += 4;
 
-    uint32_t r = b1;
-    r |= b2 << 8;
-    r |= b3 << 16;
-    r |= b4 << 24;
-
-    return r;
+    return result;
 }
