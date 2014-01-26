@@ -507,21 +507,10 @@ void Animator::renderNextFrame() {
     accelerometerXValue = accelGyro.getNormalisedXValue();
     accelerometerYValue = accelGyro.getNormalisedYValue();
 
-#if 0
-    Serial.print("Processing frame: ");
-    Serial.print(frameIndex, DEC);
-    Serial.println();
-#endif
-
-
     processFrame(frameIndex);
 
     frameIndex++;
     
-    uint32_t position = animationReader->getPosition();
-    Serial.print("Position after frame: 0x");
-    Serial.println(position, HEX);
-
     if (frameIndex > timeAxisHighValue) {
         uint8_t terminatingByte = animationReader->readUnsignedByte();
         if (terminatingByte != TERMINATING_BYTE) {
@@ -537,6 +526,12 @@ void Animator::renderNextFrame() {
 }
 
 void Animator::processFrame(uint8_t frameIndex) {
+#ifdef DEBUG_ANIMATOR_FRAME_POSITIONS
+    uint32_t position = animationReader->getPosition();
+    Serial.print("Reader position before frame: 0x");
+    Serial.println(position, HEX);
+#endif
+
 #ifdef DEBUG_ANIMATOR_FRAME
     Serial.print("Frame: ");
     Serial.println(frameIndex);
@@ -564,6 +559,12 @@ void Animator::processFrame(uint8_t frameIndex) {
     }
 #ifdef DEBUG_ANIMATOR_FRAME
     Serial.println();
+#endif
+
+    #ifdef DEBUG_ANIMATOR_FRAME_POSITIONS
+    position = animationReader->getPosition();
+    Serial.print("Reader position after frame: 0x");
+    Serial.println(position, HEX);
 #endif
 }
 
