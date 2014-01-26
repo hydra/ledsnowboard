@@ -83,14 +83,18 @@ void ValueAxis::allocateFunctionRanges(void) {
 }
 
 void ValueAxis::readFunctionRanges(void) {
-	for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+    for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 		uint8_t rangeCount = animationReader->readUnsignedByte();
 
 		LedFunctionRanges *ledFunctionRange = new LedFunctionRanges(ledIndex, rangeCount, animationReader);
-		ledFunctionRange->initialise();
-
 		ledFunctionRanges[ledIndex] = ledFunctionRange;
 	}
+
+    for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+        LedFunctionRanges *ledFunctionRange = ledFunctionRanges[ledIndex];
+        uint8_t rangeCount = animationReader->readUnsignedByte();
+        ledFunctionRange->initialise();
+    }
 }
 
 uint8_t ValueAxis::retrieveFunctionIndex(uint16_t ledIndex, int8_t valueAxisValue) {
