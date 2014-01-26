@@ -17,11 +17,15 @@ AnimationReader::AnimationReader(FileReader *fileReader) :
 }
 
 void AnimationReader::seek(uint32_t _position) {
+    Serial.print("Seek: 0x");
+    Serial.println(_position, HEX);
     position = _position;
     fileReader->seek(position);
 }
 
 uint32_t AnimationReader::getPosition(void) {
+    Serial.print("Current position: 0x");
+    Serial.println(position, HEX);
     return position;
 }
 
@@ -78,7 +82,5 @@ uint32_t AnimationReader::readUnsignedInt32(void) {
     result |= readUnsignedByte() << 16;
     result |= readUnsignedByte() << 24;
     
-    position += 4;
-
     return result;
 }
