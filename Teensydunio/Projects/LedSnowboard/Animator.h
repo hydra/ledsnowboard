@@ -62,6 +62,7 @@ private:
     void readAndSetColour(uint16_t ledIndex);
     void readFunctionData(uint8_t functionIndex);
     void readTimeAxisHeader(void);
+    void readBackgroundColour(void);
     void readValueAxis(uint8_t valueAxisIndex);
     void processFrame(uint8_t frameIndex);
     void beginReadAxisHeader(void);

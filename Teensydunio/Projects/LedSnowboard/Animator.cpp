@@ -93,7 +93,7 @@ void Animator::reset(void) {
 
 void Animator::initializeFunctionData(uint8_t colorComponentCount) {
     for (uint8_t i = 0; i < functionCount; i++) {
-#ifdef DEBUG_INITIALIZATION_OF_DATA
+#ifdef DEBUG_INITIALIZATION_OF_FUNCTION_DATA
         Serial.print("Row: ");
         Serial.print(i, DEC);
         Serial.print(" - ");
@@ -355,7 +355,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         }
 
         if (ledIndex == 0) {
-            Serial.print("led 0 increments (valueAxisValue,functionIndex) (r,g,b): ");
+            Serial.print("led 0 increments (functionIndex) (r,g,b): ");
         }
 #endif
 
@@ -373,8 +373,6 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
                     Serial.print(", ");
                 }
                 Serial.print("(");
-                Serial.print(valueAxisValueIndex, DEC);
-                Serial.print(",");
                 Serial.print(functionIndex, DEC);
                 Serial.print(") (");
                 Serial.print(redIncrement, DEC);
@@ -471,20 +469,27 @@ void Animator::readTimeAxisHeader(void) {
     Serial.print(timeAxisFrequencyMillis, DEC);
     Serial.println();
 
-    hasBackgroundColour = animationReader->readUnsignedByte();
-    if (hasBackgroundColour) {
-        Serial.print("background colour : ");
-        backgroundColourRed = animationReader->readUnsignedByte();
-        backgroundColourGreen = animationReader->readUnsignedByte();
-        backgroundColourBlue = animationReader->readUnsignedByte();
+    readBackgroundColour();
+}
 
-        Serial.print(backgroundColourRed, HEX);
-        Serial.print(" ");
-        Serial.print(backgroundColourGreen, HEX);
-        Serial.print(" ");
-        Serial.print(backgroundColourBlue, HEX);
-        Serial.println();
+void Animator::readBackgroundColour(void) {
+    hasBackgroundColour = animationReader->readUnsignedByte();
+    if (!hasBackgroundColour) {
+        Serial.print("No background colour detected.");
+        return;
     }
+
+    backgroundColourRed = animationReader->readUnsignedByte();
+    backgroundColourGreen = animationReader->readUnsignedByte();
+    backgroundColourBlue = animationReader->readUnsignedByte();
+
+    Serial.print("Background colour : ");
+    Serial.print(backgroundColourRed, HEX);
+    Serial.print(" ");
+    Serial.print(backgroundColourGreen, HEX);
+    Serial.print(" ");
+    Serial.print(backgroundColourBlue, HEX);
+    Serial.println();
 }
 
 void Animator::readValueAxis(uint8_t valueAxisIndex) {
