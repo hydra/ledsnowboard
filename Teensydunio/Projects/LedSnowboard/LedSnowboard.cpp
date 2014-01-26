@@ -28,6 +28,8 @@
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
 
+ScheduledAction buttonProcessAction;
+
 StatusLed earlyStartupStatusAndSdCardPresenceLed(TEENSY_LED_PIN);
 StatusLed cpuStatusLed(CPU_STATUS_LED_PIN);
 
@@ -147,6 +149,9 @@ void setup() {
     selectInput.configure(SELECT_BUTTON_PIN);
     selectButton.setInput(&selectInput);
 
+    buttonProcessAction.setDelayMicros(1000 * 50);
+    buttonProcessAction.reset();
+
 #ifdef DEBUG_BUTTON_TEST
     Serial.print("Press and release BACK, UP, DOWN then SELECT to begin");
 
@@ -166,6 +171,54 @@ void setup() {
 
     Serial.print("FINISHED SETUP");
     Serial.print("\n");
+}
+
+SdBaseFile* root;
+char fileName[13];
+
+void openNextAnimation() {
+
+    bool opened = false;
+
+    do {
+        opened = animationFile.openNext(root, O_RDONLY);
+        if (!opened) {
+            break;
+        }
+
+        animationFile.getFilename(fileName);
+        Serial.print("Filename: ");
+        Serial.print(fileName);
+        if (strstr(fileName, ".LAX") == NULL) {
+            animationFile.close();
+            Serial.println("..SKIPPED");
+            opened = false;
+            continue;
+        }
+
+    } while (!opened);
+
+    if (!opened) {
+        Serial.print("No more animation files");
+        return;
+    }
+
+    Serial.println("..OK");
+
+    showFreeRam();
+
+
+    fileReader.setSdFile(&animationFile);
+    // setup leds and animation
+    animator.readAnimationDetails(&fileReader);
+    showFreeRam();
+
+#ifdef OVERRIDE_ANIMATION_FREQUENCY
+    animationFrameAdvanceAction.setDelayMillis(1);
+#else
+    animationFrameAdvanceAction.setDelayMillis(animator.timeAxisFrequencyMillis);
+#endif
+    animationFrameAdvanceAction.reset();
 }
 
 #if SHOW_SD_CARD_CONTENTS_ON_INSERTION
@@ -221,32 +274,18 @@ void onSdCardInserted() {
     showSdCardContents();
 #endif
 
-    Serial.print("Opening TEST3.ANI...");
+    root = sd.vwd();
 
-    if (!animationFile.open("TEST3.ANI", O_RDONLY)) {
-        sd.errorPrint("opening TEST3.ANI for read failed");
-        return;
-    }
-    Serial.println("OK");
-    showFreeRam();
+    openNextAnimation();
+}
 
-
-    fileReader.setSdFile(&animationFile);
-    // setup leds and animation
-    animator.readAnimationDetails(&fileReader);
-    showFreeRam();
-
-#ifdef OVERRIDE_ANIMATION_FREQUENCY
-    animationFrameAdvanceAction.setDelayMillis(1);
-#else
-    animationFrameAdvanceAction.setDelayMillis(animator.timeAxisFrequencyMillis);
-#endif
-    animationFrameAdvanceAction.reset();
+void stopAnimation() {
+    animationFile.close();
+    animator.reset();
 }
 
 void onSdCardRemoved(void) {
-    animationFile.close();
-    animator.reset();
+    stopAnimation();
     earlyStartupStatusAndSdCardPresenceLed.configure();
     earlyStartupStatusAndSdCardPresenceLed.enable();
 }
@@ -313,12 +352,28 @@ void processGyro(void) {
   accelGyro.refresh();
 }
 
+void waitForButtonRelease(DebouncedInput button) {
+    while (button.getValue());
+}
+
+void processButtons(void) {
+    if (!buttonProcessAction.isActionDue()) {
+        return;
+    }
+
+    if (selectButton.getValue()) {
+        waitForButtonRelease(selectButton);
+        stopAnimation();
+        openNextAnimation();
+    }
+}
+
 void loop() {
     updateCpuActivityLed();
     updateSerialStatus();
     processGyro();
     checkSdCardStatus();
-
+    processButtons();
     updateAnimation();
 }
 
