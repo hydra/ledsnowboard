@@ -21,6 +21,9 @@
 #include "FrameType.h"
 #include "ScaleMath.h"
 
+#include "File/FileReader.h"
+#include "AnimationReader.h"
+#include "ValueAxis.h"
 
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
@@ -358,11 +361,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
 
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
 
-            //uint16_t valueAxisValueIndex = (-currentValueAxis->valueAxisLowValue) + valueAxisValue; // FIXME verify this is correct
-
-            //int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisValueIndex];
-
-            int functionIndex = 0;
+            uint8_t functionIndex = currentValueAxis->retrieveFunctionIndex(ledIndex, valueAxisValue);
 
             redIncrement += functionData[functionIndex][0];
             greenIncrement += functionData[functionIndex][1];

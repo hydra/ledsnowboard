@@ -22,6 +22,7 @@
 #include "DebouncedInput.h"
 
 #include "Scheduling/ScheduledAction.h"
+#include "File/FileReader.h"
 #include "File/SdCardFileReader.h"
 
 ScheduledAction statusLedAction;

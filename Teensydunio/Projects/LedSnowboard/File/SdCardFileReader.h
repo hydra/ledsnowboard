@@ -8,8 +8,6 @@
 #ifndef SDCARDFILEREADER_H_
 #define SDCARDFILEREADER_H_
 
-#include "FileReader.h"
-
 class SdCardFileReader: public FileReader {
 public:
     SdCardFileReader();

@@ -18,6 +18,8 @@ public:
 
     void initialise(void);
 
+    uint8_t retrieveFunctionIndex(int8_t valueAxisValue);
+
 private:
     uint16_t ledIndex;
     uint8_t rangeCount;

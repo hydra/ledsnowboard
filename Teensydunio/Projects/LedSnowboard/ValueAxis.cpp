@@ -93,3 +93,10 @@ void ValueAxis::readFunctionRanges(void) {
 	}
 }
 
+uint8_t ValueAxis::retrieveFunctionIndex(uint16_t ledIndex, int8_t valueAxisValue) {
+    LedFunctionRanges *ledFunctionRangesForLed = ledFunctionRanges[ledIndex];
+    uint8_t ledFunctionIndex = ledFunctionRangesForLed->retrieveFunctionIndex(valueAxisValue);
+
+    return ledFunctionIndex;
+}
+

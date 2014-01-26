@@ -23,4 +23,3 @@ FunctionRange::FunctionRange(
 
 FunctionRange::~FunctionRange() {
 }
-

@@ -26,6 +26,8 @@ public:
 
     void initialise(void);
     
+    uint8_t retrieveFunctionIndex(uint16_t ledIndex, int8_t valueAxisValue);
+
 private:
     void allocateFunctionRanges(void);
     void readFunctionRanges(void);
