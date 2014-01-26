@@ -14,7 +14,6 @@
 #include "StatusLed.h"
 #include "AccelGyro.h"
 #include "Animator.h"
-#include "Animations.h"
 #include "Sampler.h"
 #include "SensorDataStore.h"
 
@@ -221,22 +220,12 @@ void onSdCardInserted() {
     showSdCardContents();
 #endif
 
-#ifdef USE_ANIMATION_1
-    Serial.print("Opening TEST1.ANI...");
-    
-    if (!animationFile.open("TEST1.ANI", O_RDONLY)) {
-        sd.errorPrint("opening TEST1.ANI for read failed");
-        return;
-    }
-#endif
-#ifdef USE_ANIMATION_2
-    Serial.print("Opening TEST2.ANI...");
+    Serial.print("Opening TEST3.ANI...");
 
-    if (!animationFile.open("TEST2.ANI", O_RDONLY)) {
-        sd.errorPrint("opening TEST2.ANI for read failed");
+    if (!animationFile.open("TEST3.ANI", O_RDONLY)) {
+        sd.errorPrint("opening TEST3.ANI for read failed");
         return;
     }
-#endif
     Serial.println("OK");
     showFreeRam();
 

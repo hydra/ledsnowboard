@@ -18,7 +18,6 @@
 #include <OctoWS2811.h>
 
 #include "Animator.h"
-#include "Animations.h"
 #include "FrameType.h"
 #include "ScaleMath.h"
 
@@ -45,7 +44,7 @@ void Animator::reset(void) {
 
     if (functionData) {
 #ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-        for (uint8_t functionIndex; functionIndex < functionCount; functionIndex++) {
+        for (uint8_t functionIndex = 0; functionIndex < functionCount; functionIndex++) {
             free(functionData[functionIndex]);
         }
 #endif
@@ -359,9 +358,11 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
 
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
 
-            uint16_t valueAxisValueIndex = (-currentValueAxis->valueAxisLowValue) + valueAxisValue; // FIXME verify this is correct
+            //uint16_t valueAxisValueIndex = (-currentValueAxis->valueAxisLowValue) + valueAxisValue; // FIXME verify this is correct
 
-            int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisValueIndex];
+            //int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisValueIndex];
+
+            int functionIndex = 0;
 
             redIncrement += functionData[functionIndex][0];
             greenIncrement += functionData[functionIndex][1];

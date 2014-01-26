@@ -8,8 +8,6 @@
 #ifndef ANIMATOR_H_
 #define ANIMATOR_H_
 
-#include "Animations.h"
-
 #include "File/FileReader.h"
 #include "AnimationReader.h"
 #include "ValueAxis.h"

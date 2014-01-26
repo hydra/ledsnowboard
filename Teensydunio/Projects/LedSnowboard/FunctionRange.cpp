@@ -5,20 +5,22 @@
  *      Author: anne
  */
 
+#include "WProgram.h"
+
 #include "FunctionRange.h"
 
-FunctionRange::FunctionRange(int8_t lowValue,
-		int8_t highValue,
-		int8_t zeroValue,
-		uint8_t functionNumber) :
-		lowValue(lowValue),
-		highValue(highValue),
-		zeroValue(zeroValue),
-		functionNumber(functionNumber) {
+FunctionRange::FunctionRange(
+        int8_t low,
+		int8_t high,
+		int8_t anchor,
+		uint8_t functionRef) :
+		low(low),
+		high(high),
+		anchor(anchor),
+		functionRef(functionRef) {
 
 }
 
 FunctionRange::~FunctionRange() {
-	// TODO Auto-generated destructor stub
 }
 

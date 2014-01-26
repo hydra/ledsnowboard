@@ -10,17 +10,18 @@
 
 class FunctionRange {
 public:
-	FunctionRange(int8_t lowValue,
-					int8_t highValue,
-					int8_t zeroValue,
-					uint8_t functionNumber);
-	virtual ~FunctionRange();
+    FunctionRange(
+            int8_t low,
+            int8_t high,
+            int8_t anchor,
+            uint8_t functionRef);
+    virtual ~FunctionRange();
 
 private:
-	int8_t lowValue;
-	int8_t highValue;
-	int8_t zeroValue;
-	uint8_t functionNumber;
+    int8_t low;
+    int8_t high;
+    int8_t anchor;
+    uint8_t functionRef;
 };
 
 #endif /* FUNCTIONRANGE_H_ */
