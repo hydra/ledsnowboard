@@ -310,7 +310,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         Serial.println(")");
     }
 #endif
-    
+
     if (hasBackgroundColour &&
     	(
     		red == backgroundColourRed &&
@@ -504,8 +504,6 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
 
 void Animator::renderNextFrame() {
 
-    accelGyro.refresh();
-
     accelerometerXValue = accelGyro.getNormalisedXValue();
     accelerometerYValue = accelGyro.getNormalisedYValue();
 
@@ -520,10 +518,17 @@ void Animator::renderNextFrame() {
 
     frameIndex++;
     
+    uint32_t position = animationReader->getPosition();
+    Serial.print("Position after frame: 0x");
+    Serial.println(position, HEX);
+
     if (frameIndex > timeAxisHighValue) {
-        // if (readByteUnsignedChar(&iCounter) != TERMINATING_BYTE) {
-        //throw new InvalidAnimationException("No terminating byte");
-        // }
+        uint8_t terminatingByte = animationReader->readUnsignedByte();
+        if (terminatingByte != TERMINATING_BYTE) {
+            Serial.println("Missing EOF marker");
+
+            systemHalt(); // FIXME just reset the animation instead.
+        }
         
         // rewind after last frame
         frameIndex = timeAxisLowValue;
@@ -532,9 +537,22 @@ void Animator::renderNextFrame() {
 }
 
 void Animator::processFrame(uint8_t frameIndex) {
-    for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        uint8_t frameType = animationReader->readUnsignedByte();
+#ifdef DEBUG_ANIMATOR_FRAME
+    Serial.print("Frame: ");
+    Serial.println(frameIndex);
 
+    Serial.print("Frame data (ledIndex,type): ");
+#endif
+    for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+
+        uint8_t frameType = animationReader->readUnsignedByte();
+#ifdef DEBUG_ANIMATOR_FRAME
+        Serial.print("(0x");
+        Serial.print(ledIndex, HEX);
+        Serial.print(",0x");
+        Serial.print(frameType, HEX);
+        Serial.print(")");
+#endif
         switch (frameType) {
             case FT_FUNCTION:
                 //readFunctionAndSetColour();
@@ -544,5 +562,8 @@ void Animator::processFrame(uint8_t frameIndex) {
                 break;
         }
     }
+#ifdef DEBUG_ANIMATOR_FRAME
+    Serial.println();
+#endif
 }
 
