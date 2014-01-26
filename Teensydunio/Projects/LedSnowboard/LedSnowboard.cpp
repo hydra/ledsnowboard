@@ -18,6 +18,10 @@
 #include "Sampler.h"
 #include "SensorDataStore.h"
 
+#include "Input.h"
+#include "ArduinoDigitalInput.h"
+#include "DebouncedInput.h"
+
 #include "Scheduling/ScheduledAction.h"
 #include "File/SdCardFileReader.h"
 
@@ -57,6 +61,16 @@ OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, drawingMemory, ledConfig);
 #else
 OctoWS2811 leds( LEDS_PER_STRIP, displayMemory, NULL, ledConfig);
 #endif
+
+ArduinoDigitalInput backInput;
+ArduinoDigitalInput upInput;
+ArduinoDigitalInput downInput;
+ArduinoDigitalInput selectInput;
+
+DebouncedInput backButton;
+DebouncedInput upButton;
+DebouncedInput downButton;
+DebouncedInput selectButton;
 
 void updateSdCardPresence(void) {
   previouslyHadSdCard = hasSdCard;
@@ -122,6 +136,32 @@ void setup() {
 
     // turn light on until SD card insertion disables it.
     earlyStartupStatusAndSdCardPresenceLed.enable();
+
+
+    backInput.configure(BACK_BUTTON_PIN);
+    backButton.setInput(&backInput);
+    upInput.configure(UP_BUTTON_PIN);
+    upButton.setInput(&upInput);
+    downInput.configure(DOWN_BUTTON_PIN);
+    downButton.setInput(&downInput);
+    selectInput.configure(SELECT_BUTTON_PIN);
+    selectButton.setInput(&selectInput);
+
+#ifdef DEBUG_BUTTON_TEST
+    Serial.print("Press and release BACK, UP, DOWN then SELECT to begin");
+
+    bool backPressed = false;
+    bool upPressed = false;
+    bool downPressed = false;
+    bool selectPressed = false;
+
+    while (!(backPressed && upPressed && downPressed && selectPressed)) {
+        while(backButton.getValue()) { backPressed = true; Serial.println("B"); };
+        while(upButton.getValue()) { upPressed = true; Serial.println("U");};
+        while(downButton.getValue()) { downPressed = true; Serial.println("D");};
+        while(selectButton.getValue()) { selectPressed = true; Serial.println("S");};
+    }
+#endif
 
 
     Serial.print("FINISHED SETUP");

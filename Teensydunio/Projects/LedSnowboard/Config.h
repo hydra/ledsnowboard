@@ -20,6 +20,11 @@
 #define TEENSY_LED_PIN 13
 #define CPU_STATUS_LED_PIN 17
 
+#define BACK_BUTTON_PIN 0
+#define UP_BUTTON_PIN 1
+#define DOWN_BUTTON_PIN 23
+#define SELECT_BUTTON_PIN 22
+
 // Select your animation - they are mutually exclusive.
 //#define USE_ANIMATION_1
 #define USE_ANIMATION_2
@@ -43,6 +48,8 @@
 #define SAMPLE_WINDOW 8
 #define SAMPLE_STEP 4
 //#define LOG_SAMPLE
+
+//#define DEBUG_BUTTON_TEST
 
 //#define OVERRIDE_ANIMATION_FREQUENCY
 
