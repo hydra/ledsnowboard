@@ -8,6 +8,7 @@
 #include "WProgram.h"
 
 #include "System.h"
+#include "Config.h"
 
 #include "LedFunctionRanges.h"
 
@@ -47,6 +48,19 @@ void LedFunctionRanges::initialise(void) {
         int8_t anchor = animationReader->readUnsignedByte();
         uint8_t functionRef = animationReader->readUnsignedByte();
 
+#ifdef DEBUG_ANIMATOR_FUNCTION_RANGES_INITIALSATION
+        Serial.print("function range (index,low,high,anchor,functionRef) :(");
+        Serial.print(rangeIndex, DEC);
+        Serial.print(",");
+        Serial.print(low, DEC);
+        Serial.print(",");
+        Serial.print(high, DEC);
+        Serial.print(",");
+        Serial.print(anchor, DEC);
+        Serial.print(",");
+        Serial.print(functionRef, DEC);
+        Serial.println(")");
+#endif
         FunctionRange *functionRange = new FunctionRange(low, high, anchor, functionRef);
 
         functionRanges[rangeIndex] = functionRange;

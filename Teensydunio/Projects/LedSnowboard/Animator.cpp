@@ -299,9 +299,12 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     uint8_t green = animationReader->readUnsignedByte();
     uint8_t blue = animationReader->readUnsignedByte();
 
+
 #ifdef DEBUG_ANIMATOR_CODEC_LED_COLOURS
-    if (ledIndex == 0) {
-        Serial.print("led 0 color: (r,g,b): (0x");
+    if (DEBUG_LED_INDEX_TEST) {
+        Serial.print("led colors (ledIndex) (r,g,b): (");
+        Serial.print(ledIndex, DEC);
+        Serial.print(") (0x");
         Serial.print(red, HEX);
         Serial.print(",0x");
         Serial.print(green, HEX);
@@ -310,6 +313,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         Serial.println(")");
     }
 #endif
+
 
     if (hasBackgroundColour &&
     	(
@@ -342,8 +346,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         }
 
 #ifdef DEBUG_ANIMATOR_CODEC_VALUE_AXIS
-        if (ledIndex == 0) {
-            Serial.print("led 0 valueAxis (index,position) (start,end): (");
+        if (DEBUG_LED_INDEX_TEST) {
+            Serial.print("led valueAxis (index,position) (start,end): (");
             Serial.print(valueAxisIndex, DEC);
             Serial.print(",");
             Serial.print(valueAxisPosition, DEC);
@@ -352,10 +356,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
             Serial.print(",");
             Serial.print(end, DEC);
             Serial.println(")");
-        }
 
-        if (ledIndex == 0) {
-            Serial.print("led 0 increments (functionIndex) (r,g,b): ");
+            Serial.print("led increments (functionIndex) (r,g,b): ");
         }
 #endif
 
@@ -368,7 +370,7 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
             blueIncrement += functionData[functionIndex][2];
 
 #ifdef DEBUG_ANIMATOR_CODEC_VALUE_AXIS
-            if (ledIndex == 0) {
+            if (DEBUG_LED_INDEX_TEST) {
                 if (valueAxisValue != start) {
                     Serial.print(", ");
                 }
@@ -386,14 +388,14 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         }
 
 #ifdef DEBUG_ANIMATOR_CODEC_VALUE_AXIS
-        if (ledIndex == 0) {
+        if (DEBUG_LED_INDEX_TEST) {
             Serial.println();
         }
 #endif
 
 #ifdef DEBUG_ANIMATOR_CODEC_FINAL_INCREMENTS
-        if (ledIndex == 0) {
-            Serial.print("led 0 pre-fixed increments (r,g,b): (");
+        if (DEBUG_LED_INDEX_TEST) {
+            Serial.print("led pre-fixed increments (r,g,b): (");
 
             Serial.print(redIncrement, DEC);
             Serial.print(",");
@@ -409,8 +411,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         blueIncrement = fixIncrement(blueIncrement);
 
 #ifdef DEBUG_ANIMATOR_CODEC_FINAL_INCREMENTS
-        if (ledIndex == 0) {
-            Serial.print("led 0 post-fixed increments (r,g,b): (");
+        if (DEBUG_LED_INDEX_TEST) {
+            Serial.print("led post-fixed increments (r,g,b): (");
 
             Serial.print(redIncrement, DEC);
             Serial.print(",");
@@ -427,8 +429,10 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     blue = applyIncrement(blue, blueIncrement);
 
 #ifdef DEBUG_ANIMATOR_CODEC_LED_COLOURS
-    if (ledIndex == 0) {
-        Serial.print("led 0 final color: (r,g,b): (0x");
+    if (DEBUG_LED_INDEX_TEST) {
+        Serial.print("led final color: (ledIndex) (r,g,b): (");
+        Serial.print(ledIndex, DEC);
+        Serial.print(") (0x");
         Serial.print(red, HEX);
         Serial.print(",0x");
         Serial.print(green, HEX);
