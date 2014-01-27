@@ -44,8 +44,9 @@ ScheduledAction sdCardStatusAction;
 ScheduledAction serialStatusAction;
 ScheduledAction gyroRefreshAction;
 
-bool hasSdCard = false;
+bool isSdCardPresent = false;
 bool previouslyHadSdCard = true;
+bool isSdCardOpen = false;
 
 SdFat sd;
 SdFile myFile;
@@ -74,18 +75,21 @@ DebouncedInput upButton;
 DebouncedInput downButton;
 DebouncedInput selectButton;
 
+SdBaseFile* root;
+char fileName[13];
+
 void updateSdCardPresence(void) {
-  previouslyHadSdCard = hasSdCard;
-  hasSdCard = digitalRead(SD_CD_PIN); // HIGH == not-present, LOW == present
-  hasSdCard = !hasSdCard;
+  previouslyHadSdCard = isSdCardPresent;
+  isSdCardPresent = digitalRead(SD_CD_PIN); // HIGH == not-present, LOW == present
+  isSdCardPresent = !isSdCardPresent;
 }
 
 bool hasSdCardBeenInserted() {
-    return (hasSdCard && !previouslyHadSdCard);
+    return (isSdCardPresent && !previouslyHadSdCard);
 }
 
 bool hasSdCardBeenRemoved() {
-    return (!hasSdCard && previouslyHadSdCard);
+    return (!isSdCardPresent && previouslyHadSdCard);
 }
 
 void showSdCardInsertionOrRemovalMessage() {
@@ -96,6 +100,47 @@ void showSdCardInsertionOrRemovalMessage() {
     if (hasSdCardBeenInserted()) {
         Serial.println("SD card inserted");
     }
+}
+
+void openSdCard(void) {
+    isSdCardOpen = false;
+    uint8_t attemptsRemaining = 5;
+    while(attemptsRemaining) {
+        Serial.print("Reading SD card...");
+        isSdCardOpen = sd.begin(SD_CS, SPI_FULL_SPEED);
+        if (isSdCardOpen) {
+            break;
+        }
+        attemptsRemaining--;
+        Serial.print("failed, attemptsRemaining: ");
+        Serial.print(attemptsRemaining, DEC);
+        Serial.println();
+
+        sd.initErrorPrint();
+
+        if (attemptsRemaining) {
+            delay(500);
+            Serial.println("Retrying SD card");
+        }
+    }
+    if (!isSdCardOpen) {
+        return;
+    }
+
+    Serial.println("OK");
+    showFreeRam();
+
+#if SHOW_SD_CARD_CONTENTS_ON_INSERTION
+    showSdCardContents();
+#endif
+
+    root = sd.vwd();
+}
+
+void resetSdCard(void) {
+    // nothing to cleanup
+
+    openSdCard();
 }
 
 void setup() {
@@ -172,17 +217,21 @@ void setup() {
     Serial.print("\n");
 }
 
-SdBaseFile* root;
-char fileName[13];
-
 void openNextAnimation() {
 
     bool opened = false;
 
+    bool haveIssuedReset = false;
+
     do {
         opened = animationFile.openNext(root, O_RDONLY);
         if (!opened) {
-            break;
+            if (haveIssuedReset) {
+                break;
+            }
+            resetSdCard();
+            haveIssuedReset = true;
+            continue;
         }
 
         animationFile.getFilename(fileName);
@@ -237,43 +286,16 @@ void showSdCardContents(void) {
 }
 #endif
 
+
 void onSdCardInserted() {
     earlyStartupStatusAndSdCardPresenceLed.configure();
     earlyStartupStatusAndSdCardPresenceLed.disable();
 
-    bool sdCardInitialised = false;
-    uint8_t attemptsRemaining = 5;
-    while(attemptsRemaining) {
-        Serial.print("Reading SD card...");
-        sdCardInitialised = sd.begin(SD_CS, SPI_FULL_SPEED);
-        if (sdCardInitialised) {
-            break;
-        }
-        attemptsRemaining--;
-        Serial.print("failed, attemptsRemaining: ");
-        Serial.print(attemptsRemaining, DEC);
-        Serial.println();
+    openSdCard();
 
-        sd.initErrorPrint();
-
-        if (attemptsRemaining) {
-            delay(500);
-            Serial.println("Retrying SD card");
-        }
-    }
-    if (!sdCardInitialised) {
+    if (!isSdCardOpen) {
         return;
     }
-
-    Serial.println("OK");
-    showFreeRam();
-
-
-#if SHOW_SD_CARD_CONTENTS_ON_INSERTION
-    showSdCardContents();
-#endif
-
-    root = sd.vwd();
 
     openNextAnimation();
 }
