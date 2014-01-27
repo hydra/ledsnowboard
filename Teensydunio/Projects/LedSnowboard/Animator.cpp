@@ -475,7 +475,7 @@ void Animator::readTimeAxisHeader(void) {
 void Animator::readBackgroundColour(void) {
     hasBackgroundColour = animationReader->readUnsignedByte();
     if (!hasBackgroundColour) {
-        Serial.print("No background colour detected.");
+        Serial.println("No background colour detected.");
         return;
     }
 
