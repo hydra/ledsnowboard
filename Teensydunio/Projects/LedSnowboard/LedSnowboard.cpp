@@ -139,7 +139,6 @@ void setup() {
     // turn light on until SD card insertion disables it.
     earlyStartupStatusAndSdCardPresenceLed.enable();
 
-
     backInput.configure(BACK_BUTTON_PIN);
     backButton.setInput(&backInput);
     upInput.configure(UP_BUTTON_PIN);
@@ -149,7 +148,7 @@ void setup() {
     selectInput.configure(SELECT_BUTTON_PIN);
     selectButton.setInput(&selectInput);
 
-    buttonProcessAction.setDelayMicros(1000 * 50);
+    buttonProcessAction.setDelayMicros(1000 * 10); // must be less than the debounce delay
     buttonProcessAction.reset();
 
 #ifdef DEBUG_BUTTON_TEST
@@ -353,7 +352,18 @@ void processGyro(void) {
 }
 
 void waitForButtonRelease(DebouncedInput button) {
-    while (button.getValue());
+#ifdef DEBUG_BUTTON_RELEASE
+        Serial.print(">");
+#endif
+    while (button.getValue()) {
+#ifdef DEBUG_BUTTON_RELEASE
+        Serial.print("-");
+#endif
+        delayMicroseconds(1000 * button.getDebounceDelayMillis());
+    }
+#ifdef DEBUG_BUTTON_RELEASE
+    Serial.println("<");
+#endif
 }
 
 void processButtons(void) {
