@@ -69,7 +69,7 @@ void ValueAxis::initialise(void) {
 
 void ValueAxis::allocateFunctionRanges(void) {
 
-    Serial.print("Allocating ledFunctionRanges...");
+    Serial.print("Allocating ledFunctionRanges array...");
 #if 1
     ledFunctionRanges = new LedFunctionRanges *[ledCount];
 #else
@@ -83,19 +83,38 @@ void ValueAxis::allocateFunctionRanges(void) {
 }
 
 void ValueAxis::readFunctionRanges(void) {
+    Serial.print("Allocating ledFunctionRanges (ledIndex, rangeCount):");
     uint8_t rangeCount;
     for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 		rangeCount = animationReader->readUnsignedByte();
 
+		Serial.print(" (");
+		Serial.print(ledIndex, DEC);
+		Serial.print(",");
+		Serial.print(rangeCount, DEC);
+		Serial.print(")");
+
 		LedFunctionRanges *ledFunctionRange = new LedFunctionRanges(ledIndex, rangeCount, animationReader);
+		verifyMemoryAllocation(ledFunctionRange);
+
 		ledFunctionRanges[ledIndex] = ledFunctionRange;
 	}
+    Serial.println(" OK");
 
+    Serial.print("Reading ledFunctionRanges (ledIndex, rangeCount):");
     for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         LedFunctionRanges *ledFunctionRange = ledFunctionRanges[ledIndex];
         rangeCount = animationReader->readUnsignedByte();
+
+        Serial.print(" (");
+        Serial.print(ledIndex, DEC);
+        Serial.print(",");
+        Serial.print(rangeCount, DEC);
+        Serial.print(")");
+
         ledFunctionRange->initialise();
     }
+    Serial.println(" OK");
 }
 
 uint8_t ValueAxis::retrieveFunctionIndex(uint16_t ledIndex, int8_t valueAxisValue) {
