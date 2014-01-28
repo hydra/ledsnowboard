@@ -14,23 +14,36 @@
 #include "ValueAxis.h"
 #include "FrameType.h"
 
-ValueAxis::ValueAxis(uint16_t _ledCount, AnimationReader *_animationReader) :
-    ledCount(_ledCount),
-    functionIndices(NULL),
-    functionIndicesEntryCount(0),
-    animationReader(_animationReader)
+ValueAxis::ValueAxis(uint16_t ledCount, AnimationReader *animationReader) :
+    ledCount(ledCount),
+    valueAxisLowValue(0),
+    valueAxisCentreValue(0),
+    valueAxisHighValue(0),
+    ledFunctionRanges(NULL),
+    animationReader(animationReader)
 {
 }
 
 ValueAxis::~ValueAxis(void) {
-    if (functionIndices) {
-#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-        for (uint16_t functionIndicesEntryIndex = 0; functionIndicesEntryIndex < functionIndicesEntryCount; functionIndicesEntryIndex++) {
-            free(functionIndices[functionIndicesEntryIndex]);
-        }
-#endif
-        free(functionIndices);
+    if (!ledFunctionRanges) {
+        return;
     }
+
+    for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+        LedFunctionRanges *ledFunctionRange = ledFunctionRanges[ledIndex];
+
+        if (ledFunctionRange) {
+            delete ledFunctionRange;
+        }
+
+        ledFunctionRanges[ledIndex] = 0;
+    }
+
+#if 1
+    delete[] ledFunctionRanges;
+#else
+    free(ledFunctionRanges);
+#endif
 }
 
 void ValueAxis::initialise(void) {
@@ -48,160 +61,66 @@ void ValueAxis::initialise(void) {
     Serial.print(valueAxisCentreValue, DEC);
     Serial.println();
 
-    allocateFunctionIndices();
+    allocateFunctionRanges();
 
-    initializeFunctionIndices();
-
-    readFunctionIndices();
+    readFunctionRanges();
 
 }
 
+void ValueAxis::allocateFunctionRanges(void) {
 
-void ValueAxis::allocateFunctionIndices(void) {
-    functionIndicesEntryCount = -valueAxisLowValue + valueAxisHighValue;
-    if (
-        valueAxisCentreValue != valueAxisLowValue
-        &&
-        valueAxisCentreValue != valueAxisHighValue
-    ) {
-        functionIndicesEntryCount++;
-    }
+    Serial.print("Allocating ledFunctionRanges array...");
+#if 1
+    ledFunctionRanges = new LedFunctionRanges *[ledCount];
+#else
+    const size_t memoryToAllocate = ledCount * sizeof *ledFunctionRanges;
 
-    Serial.print("functionIndicesEntryCount: ");
-    Serial.print(functionIndicesEntryCount, DEC);
-    Serial.println();
+    ledFunctionRanges = (LedFunctionRanges **) malloc(memoryToAllocate);
+#endif
 
-    const size_t row_pointers_bytes = ledCount * sizeof *functionIndices;
-    const size_t row_elements_bytes = functionIndicesEntryCount * sizeof(uint8_t);
-    const size_t memoryToAllocate = row_pointers_bytes + (ledCount * row_elements_bytes);
-
-    Serial.print("memoryToAllocate (rows, row pointer size, columns*row element size, total): ");
-    Serial.print(ledCount, DEC);
-    Serial.print(", ");
-    Serial.print(row_pointers_bytes, DEC);
-    Serial.print(", ");
-    Serial.print(functionIndicesEntryCount, DEC);
-    Serial.print("*");
-    Serial.print(row_elements_bytes, DEC);
-    Serial.print(", ");
-    Serial.print(memoryToAllocate, DEC);
-    Serial.println();
-
-#ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-
-    Serial.print("Allocating function indices...");
-    functionIndices = (uint8_t **) malloc(row_pointers_bytes);
-    verifyMemoryAllocation((void *)functionIndices);
+    verifyMemoryAllocation((void *)ledFunctionRanges);
     Serial.println("OK");
+}
 
-    Serial.print("Allocating function indices rows: ");
-    for(size_t i = 0; i < ledCount; i++) {
-        functionIndices[i] = (uint8_t *) malloc(row_elements_bytes);
-        verifyMemoryAllocation((void *)functionIndices[i]);
-        Serial.print("#");
+void ValueAxis::readFunctionRanges(void) {
+    Serial.print("Allocating ledFunctionRanges (ledIndex, rangeCount):");
+    uint8_t rangeCount;
+    for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+		rangeCount = animationReader->readUnsignedByte();
+
+		Serial.print(" (");
+		Serial.print(ledIndex, DEC);
+		Serial.print(",");
+		Serial.print(rangeCount, DEC);
+		Serial.print(")");
+
+		LedFunctionRanges *ledFunctionRange = new LedFunctionRanges(ledIndex, rangeCount, animationReader);
+		verifyMemoryAllocation(ledFunctionRange);
+
+		ledFunctionRanges[ledIndex] = ledFunctionRange;
+	}
+    Serial.println(" OK");
+
+    Serial.print("Reading ledFunctionRanges (ledIndex, rangeCount):");
+    for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+        LedFunctionRanges *ledFunctionRange = ledFunctionRanges[ledIndex];
+        rangeCount = animationReader->readUnsignedByte();
+
+        Serial.print(" (");
+        Serial.print(ledIndex, DEC);
+        Serial.print(",");
+        Serial.print(rangeCount, DEC);
+        Serial.print(")");
+
+        ledFunctionRange->initialise();
     }
     Serial.println(" OK");
-#else
-    // FIXME is this really correct?
-
-    functionIndices = (uint8_t **) malloc(memoryToAllocate);
-
-    Serial.print("functionIndices: ");
-    Serial.print((uint32_t)functionIndices, HEX);
-    Serial.println();
-
-    uint8_t *data = (uint8_t *)functionIndices + sizeof(uint8_t*) * ledCount;
-    for(size_t i = 0; i < ledCount; i++) {
-        functionIndices[i] = data + i * functionIndicesEntryCount;
-        Serial.print("functionIndices[");
-        Serial.print(i, DEC);
-        Serial.print("]: ");
-        Serial.print((uint32_t)functionIndices[i], HEX);
-        Serial.println();
-    }
-#endif
-    Serial.println("functionIndices allocated");
-    showFreeRam();
 }
 
-void ValueAxis::initializeFunctionIndices(void) {
-    for (uint16_t i = 0; i < ledCount; i++) {
-#ifdef DEBUG_INITIALIZATION_OF_DATA
-        Serial.print("Row: ");
-        Serial.print(i, DEC);
-        Serial.print(" - ");
-#endif
-        for (uint16_t j = 0; j < functionIndicesEntryCount; j++) {
-#if 0
-            Serial.print((uint32_t)&functionIndices[i], HEX);
-#endif
-            functionIndices[i][j] = 0;
-#ifdef DEBUG_INITIALIZATION_OF_DATA
-            Serial.print("#");
-#endif
-#if 0
-            Serial.print(": ");
-            Serial.print(functionIndices[i][j], HEX);
-            Serial.println();
-#endif
-        }
-#ifdef DEBUG_INITIALIZATION_OF_DATA
-        Serial.println("..OK");
-#endif
-    }
-    Serial.println("functionIndicies initialised");
-}
+uint8_t ValueAxis::retrieveFunctionIndex(uint16_t ledIndex, int8_t valueAxisValue) {
+    LedFunctionRanges *ledFunctionRangesForLed = ledFunctionRanges[ledIndex];
+    uint8_t ledFunctionIndex = ledFunctionRangesForLed->retrieveFunctionIndex(valueAxisValue);
 
-
-void ValueAxis::readFunctionIndices(void) {
-
-    uint16_t valueAxisOffset;
-    
-    valueAxisOffset = -valueAxisLowValue;
-    Serial.print("valueAxisOffset: ");
-    Serial.print(valueAxisOffset, DEC);
-    Serial.println();
-
-    for (int8_t valueAxisValue = valueAxisLowValue; valueAxisValue <= valueAxisHighValue;
-            valueAxisValue++) {
-
-#if 0
-        Serial.print("valueAxisValue: ");
-        Serial.print(valueAxisValue, DEC);
-        Serial.print(", ledChunkOffset: ");
-        Serial.print(animationByteOffset, HEX);
-        Serial.println();
-#endif
-
-        for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-            uint8_t frameType = animationReader->readUnsignedByte();
-
-            uint16_t valueAxisIndex = valueAxisOffset + valueAxisValue;
-
-            uint8_t functionIndex;
-
-            switch (frameType) {
-                case FT_FUNCTION:
-
-                    functionIndex = animationReader->readUnsignedByte();
-                    functionIndices[ledIndex][valueAxisIndex] = functionIndex;
-
-#if 0
-                    if (functionIndices[ledIndex][valueAxisIndex] != 0) {
-                        Serial.print(", function: ");
-                        Serial.print(functionIndices[ledIndex][valueAxisIndex], DEC);
-                    }
-#endif
-                break;
-                case FT_LINKED:
-                    functionIndex = 255;
-                    functionIndices[ledIndex][valueAxisIndex] = functionIndex;
-                break;
-            }
-#if 0
-            Serial.println();
-#endif
-        }
-    }
+    return ledFunctionIndex;
 }
 

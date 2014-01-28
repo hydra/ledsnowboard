@@ -8,18 +8,16 @@
 #ifndef ANIMATOR_H_
 #define ANIMATOR_H_
 
-#include "Animations.h"
-
-#include "File/FileReader.h"
-#include "AnimationReader.h"
-#include "ValueAxis.h"
-
 #define COLOR_COMPONENT_COUNT 3 // R,G and B
 
 #define INITIAL_LED 1
 
 #define HEADER_BYTE 0x56
 #define TERMINATING_BYTE 0x45
+
+class FileReader;
+class AnimationReader;
+class ValueAxis;
 
 class Animator {
 public:
@@ -64,6 +62,7 @@ private:
     void readAndSetColour(uint16_t ledIndex);
     void readFunctionData(uint8_t functionIndex);
     void readTimeAxisHeader(void);
+    void readBackgroundColour(void);
     void readValueAxis(uint8_t valueAxisIndex);
     void processFrame(uint8_t frameIndex);
     void beginReadAxisHeader(void);

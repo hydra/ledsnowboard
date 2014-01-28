@@ -10,6 +10,7 @@
 #include <SdFat.h>
 #include <SdFatUtil.h>
 
+#include "FileReader.h"
 #include "SdCardFileReader.h"
 
 SdCardFileReader::SdCardFileReader() :

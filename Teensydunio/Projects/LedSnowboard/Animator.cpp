@@ -18,10 +18,12 @@
 #include <OctoWS2811.h>
 
 #include "Animator.h"
-#include "Animations.h"
 #include "FrameType.h"
 #include "ScaleMath.h"
 
+#include "File/FileReader.h"
+#include "AnimationReader.h"
+#include "ValueAxis.h"
 
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
@@ -45,7 +47,7 @@ void Animator::reset(void) {
 
     if (functionData) {
 #ifdef USE_MULTIPLE_MALLOC_CALLS_FOR_MULTIDIMENSIONAL_ARRAYS
-        for (uint8_t functionIndex; functionIndex < functionCount; functionIndex++) {
+        for (uint8_t functionIndex = 0; functionIndex < functionCount; functionIndex++) {
             free(functionData[functionIndex]);
         }
 #endif
@@ -91,7 +93,7 @@ void Animator::reset(void) {
 
 void Animator::initializeFunctionData(uint8_t colorComponentCount) {
     for (uint8_t i = 0; i < functionCount; i++) {
-#ifdef DEBUG_INITIALIZATION_OF_DATA
+#ifdef DEBUG_INITIALIZATION_OF_FUNCTION_DATA
         Serial.print("Row: ");
         Serial.print(i, DEC);
         Serial.print(" - ");
@@ -297,9 +299,12 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     uint8_t green = animationReader->readUnsignedByte();
     uint8_t blue = animationReader->readUnsignedByte();
 
+
 #ifdef DEBUG_ANIMATOR_CODEC_LED_COLOURS
-    if (ledIndex == 0) {
-        Serial.print("led 0 color: (r,g,b): (0x");
+    if (DEBUG_LED_INDEX_TEST) {
+        Serial.print("led colors (ledIndex) (r,g,b): (");
+        Serial.print(ledIndex, DEC);
+        Serial.print(") (0x");
         Serial.print(red, HEX);
         Serial.print(",0x");
         Serial.print(green, HEX);
@@ -308,7 +313,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         Serial.println(")");
     }
 #endif
-    
+
+
     if (hasBackgroundColour &&
     	(
     		red == backgroundColourRed &&
@@ -340,8 +346,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         }
 
 #ifdef DEBUG_ANIMATOR_CODEC_VALUE_AXIS
-        if (ledIndex == 0) {
-            Serial.print("led 0 valueAxis (index,position) (start,end): (");
+        if (DEBUG_LED_INDEX_TEST) {
+            Serial.print("led valueAxis (index,position) (start,end): (");
             Serial.print(valueAxisIndex, DEC);
             Serial.print(",");
             Serial.print(valueAxisPosition, DEC);
@@ -350,31 +356,25 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
             Serial.print(",");
             Serial.print(end, DEC);
             Serial.println(")");
-        }
 
-        if (ledIndex == 0) {
-            Serial.print("led 0 increments (valueAxisValue,functionIndex) (r,g,b): ");
+            Serial.print("led increments (functionIndex) (r,g,b): ");
         }
 #endif
 
         for (int8_t valueAxisValue = start; valueAxisValue < end; valueAxisValue++) {
 
-            uint16_t valueAxisValueIndex = (-currentValueAxis->valueAxisLowValue) + valueAxisValue; // FIXME verify this is correct
-
-            int functionIndex = currentValueAxis->functionIndices[ledIndex][valueAxisValueIndex];
+            uint8_t functionIndex = currentValueAxis->retrieveFunctionIndex(ledIndex, valueAxisValue);
 
             redIncrement += functionData[functionIndex][0];
             greenIncrement += functionData[functionIndex][1];
             blueIncrement += functionData[functionIndex][2];
 
 #ifdef DEBUG_ANIMATOR_CODEC_VALUE_AXIS
-            if (ledIndex == 0) {
+            if (DEBUG_LED_INDEX_TEST) {
                 if (valueAxisValue != start) {
                     Serial.print(", ");
                 }
                 Serial.print("(");
-                Serial.print(valueAxisValueIndex, DEC);
-                Serial.print(",");
                 Serial.print(functionIndex, DEC);
                 Serial.print(") (");
                 Serial.print(redIncrement, DEC);
@@ -388,14 +388,14 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         }
 
 #ifdef DEBUG_ANIMATOR_CODEC_VALUE_AXIS
-        if (ledIndex == 0) {
+        if (DEBUG_LED_INDEX_TEST) {
             Serial.println();
         }
 #endif
 
 #ifdef DEBUG_ANIMATOR_CODEC_FINAL_INCREMENTS
-        if (ledIndex == 0) {
-            Serial.print("led 0 pre-fixed increments (r,g,b): (");
+        if (DEBUG_LED_INDEX_TEST) {
+            Serial.print("led pre-fixed increments (r,g,b): (");
 
             Serial.print(redIncrement, DEC);
             Serial.print(",");
@@ -411,8 +411,8 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
         blueIncrement = fixIncrement(blueIncrement);
 
 #ifdef DEBUG_ANIMATOR_CODEC_FINAL_INCREMENTS
-        if (ledIndex == 0) {
-            Serial.print("led 0 post-fixed increments (r,g,b): (");
+        if (DEBUG_LED_INDEX_TEST) {
+            Serial.print("led post-fixed increments (r,g,b): (");
 
             Serial.print(redIncrement, DEC);
             Serial.print(",");
@@ -429,8 +429,10 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     blue = applyIncrement(blue, blueIncrement);
 
 #ifdef DEBUG_ANIMATOR_CODEC_LED_COLOURS
-    if (ledIndex == 0) {
-        Serial.print("led 0 final color: (r,g,b): (0x");
+    if (DEBUG_LED_INDEX_TEST) {
+        Serial.print("led final color: (ledIndex) (r,g,b): (");
+        Serial.print(ledIndex, DEC);
+        Serial.print(") (0x");
         Serial.print(red, HEX);
         Serial.print(",0x");
         Serial.print(green, HEX);
@@ -471,20 +473,27 @@ void Animator::readTimeAxisHeader(void) {
     Serial.print(timeAxisFrequencyMillis, DEC);
     Serial.println();
 
-    hasBackgroundColour = animationReader->readUnsignedByte();
-    if (hasBackgroundColour) {
-        Serial.print("background colour : ");
-        backgroundColourRed = animationReader->readUnsignedByte();
-        backgroundColourGreen = animationReader->readUnsignedByte();
-        backgroundColourBlue = animationReader->readUnsignedByte();
+    readBackgroundColour();
+}
 
-        Serial.print(backgroundColourRed, HEX);
-        Serial.print(" ");
-        Serial.print(backgroundColourGreen, HEX);
-        Serial.print(" ");
-        Serial.print(backgroundColourBlue, HEX);
-        Serial.println();
+void Animator::readBackgroundColour(void) {
+    hasBackgroundColour = animationReader->readUnsignedByte();
+    if (!hasBackgroundColour) {
+        Serial.println("No background colour detected.");
+        return;
     }
+
+    backgroundColourRed = animationReader->readUnsignedByte();
+    backgroundColourGreen = animationReader->readUnsignedByte();
+    backgroundColourBlue = animationReader->readUnsignedByte();
+
+    Serial.print("Background colour : ");
+    Serial.print(backgroundColourRed, HEX);
+    Serial.print(" ");
+    Serial.print(backgroundColourGreen, HEX);
+    Serial.print(" ");
+    Serial.print(backgroundColourBlue, HEX);
+    Serial.println();
 }
 
 void Animator::readValueAxis(uint8_t valueAxisIndex) {
@@ -499,26 +508,20 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
 
 void Animator::renderNextFrame() {
 
-    accelGyro.refresh();
-
     accelerometerXValue = accelGyro.getNormalisedXValue();
     accelerometerYValue = accelGyro.getNormalisedYValue();
-
-#if 0
-    Serial.print("Processing frame: ");
-    Serial.print(frameIndex, DEC);
-    Serial.println();
-#endif
-
 
     processFrame(frameIndex);
 
     frameIndex++;
     
     if (frameIndex > timeAxisHighValue) {
-        // if (readByteUnsignedChar(&iCounter) != TERMINATING_BYTE) {
-        //throw new InvalidAnimationException("No terminating byte");
-        // }
+        uint8_t terminatingByte = animationReader->readUnsignedByte();
+        if (terminatingByte != TERMINATING_BYTE) {
+            Serial.println("Missing EOF marker");
+
+            systemHalt(); // FIXME just reset the animation instead.
+        }
         
         // rewind after last frame
         frameIndex = timeAxisLowValue;
@@ -527,9 +530,28 @@ void Animator::renderNextFrame() {
 }
 
 void Animator::processFrame(uint8_t frameIndex) {
-    for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
-        uint8_t frameType = animationReader->readUnsignedByte();
+#ifdef DEBUG_ANIMATOR_FRAME_POSITIONS
+    uint32_t position = animationReader->getPosition();
+    Serial.print("Reader position before frame: 0x");
+    Serial.println(position, HEX);
+#endif
 
+#ifdef DEBUG_ANIMATOR_FRAME
+    Serial.print("Frame: ");
+    Serial.println(frameIndex);
+
+    Serial.print("Frame data (ledIndex,type): ");
+#endif
+    for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
+
+        uint8_t frameType = animationReader->readUnsignedByte();
+#ifdef DEBUG_ANIMATOR_FRAME
+        Serial.print("(0x");
+        Serial.print(ledIndex, HEX);
+        Serial.print(",0x");
+        Serial.print(frameType, HEX);
+        Serial.print(")");
+#endif
         switch (frameType) {
             case FT_FUNCTION:
                 //readFunctionAndSetColour();
@@ -539,5 +561,14 @@ void Animator::processFrame(uint8_t frameIndex) {
                 break;
         }
     }
+#ifdef DEBUG_ANIMATOR_FRAME
+    Serial.println();
+#endif
+
+    #ifdef DEBUG_ANIMATOR_FRAME_POSITIONS
+    position = animationReader->getPosition();
+    Serial.print("Reader position after frame: 0x");
+    Serial.println(position, HEX);
+#endif
 }
 

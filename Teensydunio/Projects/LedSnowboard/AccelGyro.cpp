@@ -146,13 +146,13 @@ void AccelGyro::refresh() {
 
     sampler.prepareForUpdate();
     
-
     if (!isZeroAxInitialized) {
 
         int16_t ax = sensorDataStore.sampledAccelerationData.x;
+#ifdef DEBUG_ACCEL_MIN_MAX
         Serial.print("new x zero :");
-        Serial.print(ax, DEC);
-        Serial.println();
+        Serial.println(ax, DEC);
+#endif
         zeroAx = ax;
         minAx = ax;
         maxAx = ax;
@@ -162,9 +162,10 @@ void AccelGyro::refresh() {
     if (!isZeroAyInitialized) {
 
         int16_t ay = sensorDataStore.sampledAccelerationData.y;
+#ifdef DEBUG_ACCEL_MIN_MAX
         Serial.print("new y zero :");
-        Serial.print(ay, DEC);
-        Serial.println();
+        Serial.println(ay, DEC);
+#endif
         zeroAy = ay;
         minAy = ay;
         maxAy = ay;

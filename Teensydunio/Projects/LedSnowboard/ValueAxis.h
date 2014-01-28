@@ -9,6 +9,7 @@
 #define VALUEAXIS_H_
 
 #include "AnimationReader.h"
+#include "LedFunctionRanges.h"
 
 class ValueAxis {
 public:
@@ -16,23 +17,22 @@ public:
     virtual ~ValueAxis(void);
 
     uint16_t ledCount;
-    
-    uint8_t **functionIndices;
-    uint16_t functionIndicesEntryCount;
-    
+
     int8_t valueAxisLowValue;
-    int8_t valueAxisHighValue;
     int8_t valueAxisCentreValue;
-    
+    int8_t valueAxisHighValue;
+
+    LedFunctionRanges **ledFunctionRanges;
+
     void initialise(void);
     
+    uint8_t retrieveFunctionIndex(uint16_t ledIndex, int8_t valueAxisValue);
+
 private:
-    void allocateFunctionIndices(void);
-    void initializeFunctionIndices(void);
-    void readFunctionIndices(void);
-    
+    void allocateFunctionRanges(void);
+    void readFunctionRanges(void);
+
     AnimationReader *animationReader; 
-    
 };
 
 #endif /* VALUEAXIS_H_ */
