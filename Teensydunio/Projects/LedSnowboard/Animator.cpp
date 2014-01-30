@@ -408,9 +408,11 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
 
             uint8_t functionIndex = currentValueAxis->retrieveFunctionIndex(ledIndex, valueAxisValue);
 
-            redIncrement += functionData[functionIndex][0];
-            greenIncrement += functionData[functionIndex][1];
-            blueIncrement += functionData[functionIndex][2];
+            int32_t *componentFunctionData = functionData[functionIndex];
+
+            redIncrement += componentFunctionData[0];
+            greenIncrement += componentFunctionData[1];
+            blueIncrement += componentFunctionData[2];
 
 #ifdef DEBUG_ANIMATOR_CODEC_VALUE_AXIS
             if (DEBUG_LED_INDEX_TEST) {
