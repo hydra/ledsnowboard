@@ -66,7 +66,8 @@ private:
     void readTimeAxisHeader(void);
     void readBackgroundColour(void);
     void readValueAxis(uint8_t valueAxisIndex);
-    void calculateValueAxisPositions(void);
+    void calculateValueAxisPositionsForEachSource(void);
+    void calculateValueAxisPositionsForSource(ValueAxisSource *valueAxisSource, int16_t rawValue, int16_t rangeMin, int16_t rangeMax);
     void processFrame(uint8_t frameIndex);
     void beginReadAxisHeader(void);
 

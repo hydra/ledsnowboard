@@ -548,63 +548,67 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
     valueAxis->initialise();
 }
 
-void Animator::calculateValueAxisPositions(void) {
+void Animator::calculateValueAxisPositionsForEachSource(void) {
     if (valueAxisCount == 0) {
         return;
     }
 
-    AccelerationData *sample = accelGyro.getLatestSample();
-
     for (uint8_t valueAxisSourceIndex = 0; valueAxisSourceIndex < SOURCE_COUNT; valueAxisSourceIndex++) {
         ValueAxisSource *valueAxisSource = valueAxisSources[valueAxisSourceIndex];
 
-#ifdef DEBUG_VALUE_AXIS_POSITIONS
-        Serial.print("Value Axis Positions (index,low,high) (value,position): ");
-#endif
+        AccelerationData *sample = accelGyro.getLatestSample();
 
-        int16_t clampedValue;
         int16_t rawValue;
-
-        for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
-            ValueAxis *valueAxis = valueAxes[valueAxisIndex];
-
-            int16_t rawValue;
-            if (valueAxisSourceIndex & 1) {
-                rawValue = sample->y;
-            } else {
-                rawValue = sample->x;
-            }
-            clampedValue = max(ACCEL_RANGE_MIN,min(ACCEL_RANGE_MAX, rawValue));
-
-            int8_t position = scaleRange(clampedValue, ACCEL_RANGE_MIN, ACCEL_RANGE_MAX, valueAxis->valueAxisLowValue, valueAxis->valueAxisHighValue);
-            valueAxisSource->applyValueAxisPosition(valueAxisIndex, position);
-
-#ifdef DEBUG_VALUE_AXIS_POSITIONS
-            if (valueAxisIndex != 0) {
-                Serial.print(", ");
-            }
-            Serial.print("(");
-            Serial.print(valueAxisIndex, DEC);
-            Serial.print(",");
-            Serial.print(valueAxis->valueAxisLowValue, DEC);
-            Serial.print(",");
-            Serial.print(valueAxis->valueAxisLowValue, DEC);
-            Serial.print(") (");
-            Serial.print(value, DEC);
-            Serial.print(",");
-            Serial.print(valueAxisPositions[valueAxisIndex], DEC);
-            Serial.print(")");
-#endif
+        if (valueAxisSourceIndex & 1) {
+            rawValue = sample->y;
+        } else {
+            rawValue = sample->x;
         }
+
+        calculateValueAxisPositionsForSource(valueAxisSource, rawValue, ACCEL_RANGE_MIN, ACCEL_RANGE_MAX);
+    }
+}
+
+void Animator::calculateValueAxisPositionsForSource(ValueAxisSource *valueAxisSource, int16_t rawValue, int16_t rangeMin, int16_t rangeMax) {
+
+
 #ifdef DEBUG_VALUE_AXIS_POSITIONS
-        Serial.println();
+    Serial.print("Value Axis Positions (index,low,high) (value,position): ");
+#endif
+
+    int16_t clampedValue = max(rangeMin, min(rangeMax, rawValue));
+
+    for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
+        ValueAxis *valueAxis = valueAxes[valueAxisIndex];
+
+        int8_t position = scaleRange(clampedValue, rangeMin, rangeMax, valueAxis->valueAxisLowValue, valueAxis->valueAxisHighValue);
+        valueAxisSource->applyValueAxisPosition(valueAxisIndex, position);
+
+#ifdef DEBUG_VALUE_AXIS_POSITIONS
+        if (valueAxisIndex != 0) {
+            Serial.print(", ");
+        }
+        Serial.print("(");
+        Serial.print(valueAxisIndex, DEC);
+        Serial.print(",");
+        Serial.print(valueAxis->valueAxisLowValue, DEC);
+        Serial.print(",");
+        Serial.print(valueAxis->valueAxisLowValue, DEC);
+        Serial.print(") (");
+        Serial.print(value, DEC);
+        Serial.print(",");
+        Serial.print(valueAxisPositions[valueAxisIndex], DEC);
+        Serial.print(")");
 #endif
     }
+#ifdef DEBUG_VALUE_AXIS_POSITIONS
+    Serial.println();
+#endif
 }
 
 void Animator::renderNextFrame() {
 
-    calculateValueAxisPositions();
+    calculateValueAxisPositionsForEachSource();
 
     processFrame(frameIndex);
 
