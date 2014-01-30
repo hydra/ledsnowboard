@@ -50,7 +50,7 @@
 //
 // Sampler
 //
-#define SAMPLE_FREQUENCY_HZ 50
+#define SAMPLE_FREQUENCY_HZ 100
 #define SAMPLE_WINDOW 8
 #define SAMPLE_STEP 4
 
