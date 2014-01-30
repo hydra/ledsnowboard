@@ -28,9 +28,6 @@
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
-static int8_t accelerometerXValue;
-static int8_t accelerometerYValue;
-
 Animator::Animator(void) :
         hasAnimation(false),
         fileReader(NULL),
@@ -67,6 +64,11 @@ void Animator::reset(void) {
         }
         free(valueAxes);
         valueAxes = 0;
+    }
+
+    if (valueAxisPositions) {
+        free(valueAxisPositions);
+        valueAxisPositions = 0;
     }
 
     animationByteOffsetOfFirstFrame = 0;
@@ -139,13 +141,13 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
         readFunctionData(functionIndex);
     }
 
+
     valueAxisCount = animationReader->readUnsignedByte();
     Serial.print("value axis count is ");
     Serial.print(valueAxisCount, DEC);
     Serial.println();
 
     size_t memoryToAllocate = valueAxisCount * sizeof(ValueAxis *);
-
     Serial.print("memoryToAllocate: ");
     Serial.print(memoryToAllocate, DEC);
     Serial.println();
@@ -155,14 +157,29 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     showFreeRam();
 
     readTimeAxisHeader();
-    
+
     for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
             valueAxisIndex++) {
         ValueAxis *valueAxis = new ValueAxis(ledCount, animationReader);
         valueAxes[valueAxisIndex] = valueAxis;
         readValueAxis(valueAxisIndex);
     }
-    
+
+    memoryToAllocate = valueAxisCount * sizeof(int8_t *);
+    Serial.print("memoryToAllocate: ");
+    Serial.print(memoryToAllocate, DEC);
+    Serial.println();
+
+    valueAxisPositions = (int8_t *)malloc(memoryToAllocate);
+    verifyMemoryAllocation((void *)valueAxisPositions);
+    showFreeRam();
+
+    for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
+            valueAxisIndex++) {
+        ValueAxis *valueAxis = new ValueAxis(ledCount, animationReader);
+        valueAxisPositions[valueAxisIndex] = valueAxis->valueAxisCentreValue;
+    }
+
     animationByteOffsetOfFirstFrame = animationReader->getPosition();
 
     frameIndex = timeAxisLowValue;
@@ -281,16 +298,9 @@ uint8_t applyIncrement(uint8_t colour, int32_t increment) {
     return colourSmall;
 }
 
-int8_t determineValueAxisPosition(ValueAxis *valueAxis, uint8_t valueAxisIndex) {
+int8_t Animator::determineValueAxisPosition(ValueAxis *valueAxis, uint8_t valueAxisIndex) {
 
-    // chose input source
-    if (valueAxisIndex & 0x1) {
-        return accelerometerYValue;
-    } else {
-        return accelerometerXValue;
-    }
-
-    // TODO translate accelerometer readings into a range >= valueAxisLowValue && <= valueAxisHighValue
+    return valueAxisPositions[valueAxisIndex];
 }
 
 void Animator::readAndSetColour(uint16_t ledIndex) {
@@ -505,11 +515,49 @@ void Animator::readValueAxis(uint8_t valueAxisIndex) {
     valueAxis->initialise();
 }
 
+void Animator::calculateValueAxisPositions(void) {
+    if (valueAxisCount == 0) {
+        return;
+    }
+#ifdef DEBUG_VALUE_AXIS_POSITIONS
+    Serial.print("Value Axis Positions (index,low,high) (value,position): ");
+#endif
+
+    AccelerationData *sample = accelGyro.getLatestSample();
+    int16_t value;
+
+    for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
+        ValueAxis *valueAxis = valueAxes[valueAxisIndex];
+
+        value = max(ACCEL_RANGE_MIN,min(ACCEL_RANGE_MAX, sample->x)); // clamp value to range
+
+        valueAxisPositions[valueAxisIndex] = scaleRange(value, ACCEL_RANGE_MIN, ACCEL_RANGE_MAX, valueAxis->valueAxisLowValue, valueAxis->valueAxisHighValue);
+
+#ifdef DEBUG_VALUE_AXIS_POSITIONS
+        if (valueAxisIndex != 0) {
+            Serial.print(", ");
+        }
+        Serial.print("(");
+        Serial.print(valueAxisIndex, DEC);
+        Serial.print(",");
+        Serial.print(valueAxis->valueAxisLowValue, DEC);
+        Serial.print(",");
+        Serial.print(valueAxis->valueAxisLowValue, DEC);
+        Serial.print(") (");
+        Serial.print(value, DEC);
+        Serial.print(",");
+        Serial.print(valueAxisPositions[valueAxisIndex], DEC);
+        Serial.print(")");
+#endif
+    }
+#ifdef DEBUG_VALUE_AXIS_POSITIONS
+    Serial.println();
+#endif
+}
 
 void Animator::renderNextFrame() {
 
-    accelerometerXValue = accelGyro.getNormalisedXValue();
-    accelerometerYValue = accelGyro.getNormalisedYValue();
+    calculateValueAxisPositions();
 
     processFrame(frameIndex);
 

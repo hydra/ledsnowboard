@@ -6,8 +6,12 @@
 class SensorDataStore {
 
 public:
-  AccelerationData rawAccelerationData;
-  AccelerationData sampledAccelerationData;
+    SensorDataStore() : isSampledAccelerationDataValid(false) {}
+
+    AccelerationData rawAccelerationData;
+    AccelerationData sampledAccelerationData;
+
+    bool isSampledAccelerationDataValid; // TODO make private, add getter.
 };
 
 #endif

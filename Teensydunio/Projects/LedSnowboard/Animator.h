@@ -50,6 +50,7 @@ private:
     uint8_t backgroundColourBlue;
 
     ValueAxis **valueAxes;
+    int8_t *valueAxisPositions;
 
     int32_t **functionData;
     void allocateFunctionData(void);
@@ -64,8 +65,11 @@ private:
     void readTimeAxisHeader(void);
     void readBackgroundColour(void);
     void readValueAxis(uint8_t valueAxisIndex);
+    void calculateValueAxisPositions(void);
     void processFrame(uint8_t frameIndex);
     void beginReadAxisHeader(void);
+
+    int8_t determineValueAxisPosition(ValueAxis *valueAxis, uint8_t valueAxisIndex);
 };
 
 #endif /* ANIMATOR_H_ */

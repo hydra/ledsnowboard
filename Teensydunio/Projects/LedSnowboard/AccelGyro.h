@@ -14,36 +14,42 @@
 #include "SensorDataStore.h"
 #include "Sampler.h"
 
+class NumberRange {
+public:
+    int16_t min, zero, max;
+
+    void updateLimits(int16_t value);
+    void reset(int16_t value);
+};
+
 class AccelGyro {
 public:
-    AccelGyro(StatusLed statusLed, SensorDataStore sensorDataStor, Sampler sampler);
+    AccelGyro(StatusLed statusLed, SensorDataStore sensorDataStore, Sampler sampler);
 
     void configure();
 
     MPU6050 impl;
 
-    signed int getNormalisedXValue();
-    signed int getNormalisedYValue();
+    inline NumberRange *getXRange(void) { return &xRange; }
+    inline NumberRange *getYRange(void) { return &yRange; }
 
     void refresh();
+
+    AccelerationData *getLatestSample(void);
 
 private:
     StatusLed statusLed;
     SensorDataStore sensorDataStore;
     Sampler sampler;
 
-    int8_t x;
-    int16_t minAx, maxAx, zeroAx;
-
-    int8_t y;
-    int16_t minAy, maxAy, zeroAy;
+    NumberRange xRange;
+    NumberRange yRange;
 
     bool isZeroAxInitialized;
     bool isZeroAyInitialized;
 
-
-    void normalizeAx(void);
-    void normalizeAy(void);
+    void updateXRange(int16_t value);
+    void updateYRange(int16_t value);
 };
 
 #endif /* ACCELGYRO_H_ */
