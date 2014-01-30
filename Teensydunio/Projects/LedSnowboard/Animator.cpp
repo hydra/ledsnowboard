@@ -17,22 +17,42 @@
 #include "AccelGyro.h"
 #include <OctoWS2811.h>
 
-#include "Animator.h"
-#include "FrameType.h"
-#include "ScaleMath.h"
-
 #include "File/FileReader.h"
 #include "AnimationReader.h"
+#include "LedFunctionRanges.h"
+
 #include "ValueAxis.h"
+#include "ValueAxisSource.h"
+
+#include "Animator.h"
+
+#include "FrameType.h"
+#include "ScaleMath.h"
 
 extern OctoWS2811 leds;
 extern AccelGyro accelGyro;
 
+#define SOURCE_COUNT 2
+
 Animator::Animator(void) :
+        timeAxisFrequencyMillis(0),
         hasAnimation(false),
         fileReader(NULL),
         animationReader(NULL),
-        valueAxes(NULL) {
+        animationByteOffsetOfFirstFrame(0),
+        valueAxisCount(0),
+        ledCount(0),
+        functionCount(0),
+        timeAxisLowValue(0),
+        timeAxisHighValue(0),
+        frameIndex(0),
+        hasBackgroundColour(false),
+        backgroundColourRed(0),
+        backgroundColourGreen(0),
+        backgroundColourBlue(0),
+        valueAxes(NULL),
+        valueAxisSources(NULL),
+        functionData(NULL) {
 }
 
 bool Animator::haveAnimation(void) {
@@ -49,7 +69,7 @@ void Animator::reset(void) {
         }
 #endif
         free(functionData);
-        functionData = 0;
+        functionData = NULL;
     }
 
     if (valueAxes) {
@@ -63,12 +83,20 @@ void Animator::reset(void) {
             valueAxes[valueAxisIndex] = 0;
         }
         free(valueAxes);
-        valueAxes = 0;
+        valueAxes = NULL;
     }
 
-    if (valueAxisPositions) {
-        free(valueAxisPositions);
-        valueAxisPositions = 0;
+    if (valueAxisSources) {
+        for (uint8_t valueAxisSourceIndex = 0; valueAxisSourceIndex < SOURCE_COUNT;
+                valueAxisSourceIndex++) {
+            ValueAxisSource *valueAxisSource = valueAxisSources[valueAxisSourceIndex];
+            if (!valueAxisSource) {
+                continue;
+            }
+            delete valueAxisSource;
+        }
+        free(valueAxisSources);
+        valueAxisSources = NULL;
     }
 
     animationByteOffsetOfFirstFrame = 0;
@@ -169,19 +197,19 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
         readValueAxis(valueAxisIndex);
     }
 
-    memoryToAllocate = valueAxisCount * sizeof(int8_t *);
+    memoryToAllocate = SOURCE_COUNT * sizeof(ValueAxisSource *);
     Serial.print("memoryToAllocate: ");
     Serial.print(memoryToAllocate, DEC);
     Serial.println();
 
-    valueAxisPositions = (int8_t *)malloc(memoryToAllocate);
-    verifyMemoryAllocation((void *)valueAxisPositions);
+    valueAxisSources = (ValueAxisSource **)malloc(memoryToAllocate);
+    verifyMemoryAllocation((void *)valueAxisSources);
     showFreeRam();
 
-    for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
-            valueAxisIndex++) {
-        ValueAxis *valueAxis = new ValueAxis(ledCount, animationReader);
-        valueAxisPositions[valueAxisIndex] = valueAxis->valueAxisCentreValue;
+    for (uint8_t valueAxisSourceIndex = 0; valueAxisSourceIndex < SOURCE_COUNT;
+            valueAxisSourceIndex++) {
+        ValueAxisSource *valueAxisSource = new ValueAxisSource(valueAxes, valueAxisCount);
+        valueAxisSources[valueAxisSourceIndex] = valueAxisSource;
     }
 
     animationByteOffsetOfFirstFrame = animationReader->getPosition();
@@ -304,7 +332,8 @@ uint8_t applyIncrement(uint8_t colour, int32_t increment) {
 
 int8_t Animator::determineValueAxisPosition(ValueAxis *valueAxis, uint8_t valueAxisIndex) {
 
-    return valueAxisPositions[valueAxisIndex];
+    uint8_t sourceIndex = valueAxisIndex & 1;
+    return valueAxisSources[sourceIndex]->retrievePosition(valueAxisIndex);
 }
 
 void Animator::readAndSetColour(uint16_t ledIndex) {
@@ -523,40 +552,54 @@ void Animator::calculateValueAxisPositions(void) {
     if (valueAxisCount == 0) {
         return;
     }
-#ifdef DEBUG_VALUE_AXIS_POSITIONS
-    Serial.print("Value Axis Positions (index,low,high) (value,position): ");
-#endif
 
     AccelerationData *sample = accelGyro.getLatestSample();
-    int16_t value;
 
-    for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
-        ValueAxis *valueAxis = valueAxes[valueAxisIndex];
-
-        value = max(ACCEL_RANGE_MIN,min(ACCEL_RANGE_MAX, sample->x)); // clamp value to range
-
-        valueAxisPositions[valueAxisIndex] = scaleRange(value, ACCEL_RANGE_MIN, ACCEL_RANGE_MAX, valueAxis->valueAxisLowValue, valueAxis->valueAxisHighValue);
+    for (uint8_t valueAxisSourceIndex = 0; valueAxisSourceIndex < SOURCE_COUNT; valueAxisSourceIndex++) {
+        ValueAxisSource *valueAxisSource = valueAxisSources[valueAxisSourceIndex];
 
 #ifdef DEBUG_VALUE_AXIS_POSITIONS
-        if (valueAxisIndex != 0) {
-            Serial.print(", ");
+        Serial.print("Value Axis Positions (index,low,high) (value,position): ");
+#endif
+
+        int16_t clampedValue;
+        int16_t rawValue;
+
+        for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount; valueAxisIndex++) {
+            ValueAxis *valueAxis = valueAxes[valueAxisIndex];
+
+            int16_t rawValue;
+            if (valueAxisSourceIndex & 1) {
+                rawValue = sample->y;
+            } else {
+                rawValue = sample->x;
+            }
+            clampedValue = max(ACCEL_RANGE_MIN,min(ACCEL_RANGE_MAX, rawValue));
+
+            int8_t position = scaleRange(clampedValue, ACCEL_RANGE_MIN, ACCEL_RANGE_MAX, valueAxis->valueAxisLowValue, valueAxis->valueAxisHighValue);
+            valueAxisSource->applyValueAxisPosition(valueAxisIndex, position);
+
+#ifdef DEBUG_VALUE_AXIS_POSITIONS
+            if (valueAxisIndex != 0) {
+                Serial.print(", ");
+            }
+            Serial.print("(");
+            Serial.print(valueAxisIndex, DEC);
+            Serial.print(",");
+            Serial.print(valueAxis->valueAxisLowValue, DEC);
+            Serial.print(",");
+            Serial.print(valueAxis->valueAxisLowValue, DEC);
+            Serial.print(") (");
+            Serial.print(value, DEC);
+            Serial.print(",");
+            Serial.print(valueAxisPositions[valueAxisIndex], DEC);
+            Serial.print(")");
+#endif
         }
-        Serial.print("(");
-        Serial.print(valueAxisIndex, DEC);
-        Serial.print(",");
-        Serial.print(valueAxis->valueAxisLowValue, DEC);
-        Serial.print(",");
-        Serial.print(valueAxis->valueAxisLowValue, DEC);
-        Serial.print(") (");
-        Serial.print(value, DEC);
-        Serial.print(",");
-        Serial.print(valueAxisPositions[valueAxisIndex], DEC);
-        Serial.print(")");
+#ifdef DEBUG_VALUE_AXIS_POSITIONS
+        Serial.println();
 #endif
     }
-#ifdef DEBUG_VALUE_AXIS_POSITIONS
-    Serial.println();
-#endif
 }
 
 void Animator::renderNextFrame() {

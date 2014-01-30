@@ -18,6 +18,7 @@
 class FileReader;
 class AnimationReader;
 class ValueAxis;
+class ValueAxisSource;
 
 class Animator {
 public:
@@ -50,7 +51,7 @@ private:
     uint8_t backgroundColourBlue;
 
     ValueAxis **valueAxes;
-    int8_t *valueAxisPositions;
+    ValueAxisSource **valueAxisSources;
 
     int32_t **functionData;
     void allocateFunctionData(void);

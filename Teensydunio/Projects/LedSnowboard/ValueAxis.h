@@ -8,9 +8,6 @@
 #ifndef VALUEAXIS_H_
 #define VALUEAXIS_H_
 
-#include "AnimationReader.h"
-#include "LedFunctionRanges.h"
-
 class ValueAxis {
 public:
     ValueAxis(uint16_t ledCount, AnimationReader *animationReader);

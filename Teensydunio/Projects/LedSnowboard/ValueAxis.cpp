@@ -11,6 +11,9 @@
 
 #include "System.h"
 
+#include "AnimationReader.h"
+#include "LedFunctionRanges.h"
+
 #include "ValueAxis.h"
 #include "FrameType.h"
 
