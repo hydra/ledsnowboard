@@ -117,9 +117,13 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     fileReader = _fileReader;
     animationReader = new AnimationReader(fileReader);
 
-    if (animationReader->readUnsignedByte() != HEADER_BYTE) {
-        return;
-    }
+    animationReader->readUnsignedByte(); // 'L'
+	animationReader->readUnsignedByte(); // 'A'
+	animationReader->readUnsignedByte(); // 'A'
+	animationReader->readUnsignedByte(); // 'N'
+
+    animationReader->readUnsignedByte(); // highVersion
+    animationReader->readUnsignedByte(); // lowVersion
 
     uint8_t ledCountHigh = animationReader->readUnsignedByte();
     uint8_t ledCountLow = animationReader->readUnsignedByte();
