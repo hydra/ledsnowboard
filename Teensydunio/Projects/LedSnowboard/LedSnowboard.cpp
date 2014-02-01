@@ -52,7 +52,6 @@ SdFat sd;
 SdFile myFile;
 SdFile animationFile;
 
-#define LEDS_PER_STRIP 30
 #define MEMORY_NEEDED_FOR_EACH_LED 6
 
 const int ledConfig = WS2811_GRB | WS2811_800kHz;

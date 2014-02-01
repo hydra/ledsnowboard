@@ -357,6 +357,11 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     }
 #endif
 
+#ifdef HACK_MIRROR_LEDS
+    uint8_t row = ledIndex / (LEDS_PER_STRIP / 2);
+    uint8_t column = ledIndex % (LEDS_PER_STRIP / 2);
+    uint16_t mirrorIndex = (row * LEDS_PER_STRIP) + column;
+#endif
 
     if (hasBackgroundColour &&
     	(
@@ -365,7 +370,12 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     		blue == backgroundColourBlue
     	)
     ) {
+#ifdef HACK_MIRROR_LEDS
+        leds.setPixel(mirrorIndex, red, green, blue);
+        leds.setPixel(mirrorIndex + (LEDS_PER_STRIP / 2), red, green, blue);
+#else
         leds.setPixel(ledIndex, red, green, blue);
+#endif
         return;
     }
 
@@ -493,7 +503,12 @@ void Animator::readAndSetColour(uint16_t ledIndex) {
     blue = scaleRange(blue, 0x00, 0xff, 0x00, BRIGHTNESS_MAX);
 #endif
     
+#ifdef HACK_MIRROR_LEDS
+    leds.setPixel(mirrorIndex, red, green, blue);
+    leds.setPixel(mirrorIndex + (LEDS_PER_STRIP / 2), red, green, blue);
+#else
     leds.setPixel(ledIndex, red, green, blue);
+#endif
 }
 
 void Animator::beginReadAxisHeader(void) {
