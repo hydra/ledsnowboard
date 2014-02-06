@@ -315,7 +315,7 @@ int32_t fixIncrement(int32_t increment) {
 }
 
 uint8_t applyIncrement(uint8_t colour, int32_t increment) {
-    int32_t colourBig = colour * 0x100;
+    int32_t colourBig = ((int32_t)colour) << 8; // optimization of colour * 0x100;
 
     colourBig += increment;
 
@@ -326,7 +326,7 @@ uint8_t applyIncrement(uint8_t colour, int32_t increment) {
     if (colourBig >= (0xFF * 0x100)) {
         return 0xFF;
     }
-    uint8_t colourSmall = colourBig / 0x100;
+    uint8_t colourSmall = colourBig >> 8; // optimization of colourBig / 0x100;
     return colourSmall;
 }
 
