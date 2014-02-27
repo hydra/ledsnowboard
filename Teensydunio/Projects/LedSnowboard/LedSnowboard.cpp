@@ -25,6 +25,8 @@
 #include "File/FileReader.h"
 #include "File/SdCardFileReader.h"
 
+#include "Menu.h"
+
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
 
@@ -73,6 +75,13 @@ DebouncedInput backButton;
 DebouncedInput upButton;
 DebouncedInput downButton;
 DebouncedInput selectButton;
+
+class ChooseAnimationMenu;
+class MainMenu;
+
+ChooseAnimationMenu chooseAnimationMenu;
+MainMenu mainMenu;
+MenuStack menuStack(&mainMenu, backButton, selectButton, upButton, downButton);
 
 SdBaseFile* root;
 char fileName[13];
@@ -386,199 +395,6 @@ void waitForButtonRelease(DebouncedInput button) {
     Serial.println("<");
 #endif
 }
-
-class Menu {
-public:
-    Menu() : parent(NULL), shouldChangeMenuNow(false), selectedMenu(NULL) {
-    }
-    virtual ~Menu() {};
-
-    virtual const char *getName() = 0;
-
-    virtual bool hasParent() { return parent != NULL; };
-    virtual Menu *getParent() { return parent; };
-
-    virtual bool shouldChangeMenu() { return shouldChangeMenuNow; };
-    virtual Menu *getSelectedMenu() { return selectedMenu; };
-    virtual void resetMenuSelectionStatus() {
-        selectedMenu = NULL;
-        shouldChangeMenuNow = false;
-    }
-
-    virtual void activate(Menu *currentMenu) {
-        parent = currentMenu;
-    }
-
-    virtual void onSelectButton() { showName(); Serial.println("onSelectButton"); };
-    virtual void onUpButton() { showName(); Serial.println("onUpButton"); };
-    virtual void onDownButton() { showName(); Serial.println("onDownButton"); };
-
-    virtual void onActivate() { showName(); Serial.println("onActivate"); };
-    virtual void onExit() { showName(); Serial.println("onExit"); };
-
-    virtual void onRestore() { showName(); Serial.println("onRestore"); };
-    virtual void onSuspend() { showName(); Serial.println("onSuspend"); };
-
-private:
-    void showName() {
-        Serial.print(getName());
-    }
-
-    Menu *parent;
-
-protected:
-    bool shouldChangeMenuNow;
-    Menu *selectedMenu;
-};
-
-
-class ChooseAnimationMenu : public Menu {
-public:
-    ChooseAnimationMenu() {
-    }
-
-    const char *getName() {
-        return "chooseAnimation";
-    }
-
-    void onUpButton() {
-        stopAnimation();
-        openNextAnimation();
-    }
-
-    void onDownButton() {
-        stopAnimation();
-        openNextAnimation();
-    }
-};
-
-ChooseAnimationMenu chooseAnimationMenu;
-
-class MainMenu : public Menu {
-public:
-    MainMenu() {
-    }
-
-    const char *getName() {
-        return "main";
-    }
-
-    void onSelectButton() {
-        shouldChangeMenuNow = true;
-        selectedMenu = &chooseAnimationMenu;
-    }
-
-};
-MainMenu mainMenu;
-
-class MenuStack {
-public:
-    MenuStack(
-            Menu *initialMenu,
-            DebouncedInput &backButton,
-            DebouncedInput &selectButton,
-            DebouncedInput &upButton,
-            DebouncedInput &downButton
-    ) :
-        currentMenu(initialMenu),
-        backButton(backButton),
-        selectButton(selectButton),
-        upButton(upButton),
-        downButton(downButton) {
-    }
-
-    void process() {
-#ifdef DEBUG_MENU_STACK_VERBOSE
-        Serial.println("menu stack process - begin");
-#endif
-        processButtons();
-        performUpdateMenu();
-#ifdef DEBUG_MENU_STACK_VERBOSE
-        Serial.println("menu stack process - end");
-#endif
-    }
-
-
-private:
-    void processButtons(void) {
-#ifdef DEBUG_MENU_STACK_VERBOSE
-        Serial.println("menu stack process buttons - begin");
-#endif
-        if (selectButton.getValue()) {
-            Serial.println("select pressed");
-            waitForButtonRelease(selectButton);
-
-            currentMenu->onSelectButton();
-
-            goto processButtonsEnd;
-        }
-
-        if (backButton.getValue()) {
-            Serial.println("back pressed");
-            waitForButtonRelease(backButton);
-
-            if (!currentMenu->hasParent()) {
-                return;
-            }
-
-            currentMenu->onExit();
-
-            currentMenu = currentMenu->getParent();
-            currentMenu->onRestore();
-
-            goto processButtonsEnd;
-        }
-
-        if (upButton.getValue()) {
-            Serial.println("up pressed");
-            waitForButtonRelease(upButton);
-
-            currentMenu->onUpButton();
-
-            goto processButtonsEnd;
-        }
-
-        if (downButton.getValue()) {
-            Serial.println("down pressed");
-            waitForButtonRelease(downButton);
-
-            currentMenu->onDownButton();
-
-            goto processButtonsEnd;
-        }
-
-    processButtonsEnd:
-    {
-#ifdef DEBUG_MENU_STACK_VERBOSE
-        Serial.println("menu stack process buttons - end");
-#endif
-    }
-    }
-
-    void performUpdateMenu() {
-        if (!currentMenu->shouldChangeMenu()) {
-            return;
-        }
-
-        Menu *newMenu = currentMenu->getSelectedMenu();
-        currentMenu->resetMenuSelectionStatus();
-
-        currentMenu->onSuspend();
-
-        newMenu->activate(currentMenu);
-
-        currentMenu = newMenu;
-        currentMenu->onActivate();
-    }
-
-    class Menu *currentMenu;
-    DebouncedInput &backButton;
-    DebouncedInput &selectButton;
-    DebouncedInput &upButton;
-    DebouncedInput &downButton;
-};
-
-MenuStack menuStack(&mainMenu, backButton, selectButton, upButton, downButton);
 
 void processButtons(void) {
     if (!buttonProcessAction.isActionDue()) {
