@@ -29,7 +29,7 @@ public:
     void reset(void);
 
     uint16_t timeAxisFrequencyMillis;
-    
+
 private:
     bool hasAnimation;
     FileReader *fileReader;

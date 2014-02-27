@@ -18,11 +18,15 @@ void ScheduledAction::reset() {
 }
 
 void ScheduledAction::setDelayMicros(unsigned long delayMicros) {
+    if (delayMicros == 0) {
+        this->delayMicros = 1;
+        return;
+    }
     this->delayMicros = delayMicros;
 }
 
 void ScheduledAction::setDelayMillis(unsigned long delayMillis) {
-    this->delayMicros = delayMillis * 1000L;
+    setDelayMicros(delayMillis * 1000L);
 }
 
 unsigned long ScheduledAction::getLateBy(void) {

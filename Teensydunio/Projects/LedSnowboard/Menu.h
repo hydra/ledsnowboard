@@ -62,13 +62,46 @@ public:
     void onDownButton();
 };
 
-class MainMenu : public Menu {
+class FrequencyMenu : public Menu {
 public:
-    MainMenu();
+    FrequencyMenu(AnimationScheduler *animationScheduler, Animator *animator);
 
     const char *getName();
 
+    void onUpButton();
+    void onDownButton();
+
+private:
+    void showFrequency(void);
+
+    void decreaseFrequency(void);
+    void increaseFrequency(void);
+
+    AnimationScheduler *animationScheduler;
+    Animator *animator;
+};
+
+
+class MainMenu : public Menu {
+public:
+    MainMenu(Menu **subMenus, uint8_t subMenuCount);
+
+    const char *getName();
+
+    void onActivate();
+    void onRestore();
+
+    void onUpButton();
+    void onDownButton();
     void onSelectButton();
+
+private:
+    void showCandidateMenu();
+
+    Menu **subMenus;
+    uint8_t subMenuCount;
+
+    uint8_t candidateMenuIndex;
 };
 
 class MenuStack {
@@ -81,6 +114,7 @@ public:
             DebouncedInput &downButton
     );
 
+    void initalize();
     void process();
 
 private:

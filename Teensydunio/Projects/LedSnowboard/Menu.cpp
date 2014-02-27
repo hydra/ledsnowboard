@@ -13,13 +13,20 @@
 #include "ArduinoDigitalInput.h"
 #include "DebouncedInput.h"
 
+#include "Animator.h"
+
+#include "Scheduling/ScheduledAction.h"
+#include "AnimationScheduler.h"
+
 #include "Menu.h"
 
 void stopAnimation(void);
 void openNextAnimation(void);
+
 void waitForButtonRelease(DebouncedInput button);
 
 extern ChooseAnimationMenu chooseAnimationMenu;
+extern FrequencyMenu frequencyMenu;
 
 ChooseAnimationMenu::ChooseAnimationMenu() {
 }
@@ -38,17 +45,97 @@ void ChooseAnimationMenu::onDownButton() {
     openNextAnimation();
 }
 
-MainMenu::MainMenu() {
+#define MIN_FREQUENCY 0
+#define MAX_FREQUENCY 1000
+#define FREQUENCY_STEP 10
+
+FrequencyMenu::FrequencyMenu(AnimationScheduler *animationScheduler, Animator *animator) : animationScheduler(animationScheduler), animator(animator) {
+}
+
+const char *FrequencyMenu::getName() {
+    return "frequency";
+}
+
+void FrequencyMenu::showFrequency() {
+    Serial.print("frequency: ");
+    Serial.println(animator->timeAxisFrequencyMillis, DEC);
+}
+
+void FrequencyMenu::decreaseFrequency(void) {
+    if (animator->timeAxisFrequencyMillis >= MIN_FREQUENCY + FREQUENCY_STEP) {
+        animator->timeAxisFrequencyMillis -= FREQUENCY_STEP;
+    } else {
+        animator->timeAxisFrequencyMillis = MIN_FREQUENCY;
+    }
+}
+
+void FrequencyMenu::increaseFrequency(void) {
+    if (animator->timeAxisFrequencyMillis < (MAX_FREQUENCY - FREQUENCY_STEP)) {
+        animator->timeAxisFrequencyMillis += FREQUENCY_STEP;
+    } else {
+        animator->timeAxisFrequencyMillis = MAX_FREQUENCY;
+    }
+}
+void FrequencyMenu::onUpButton() {
+    decreaseFrequency();
+    animationScheduler->update();
+    showFrequency();
+}
+
+void FrequencyMenu::onDownButton() {
+    increaseFrequency();
+    animationScheduler->update();
+    showFrequency();
+}
+
+MainMenu::MainMenu(Menu **subMenus, uint8_t subMenuCount) :
+    subMenus(subMenus),
+    subMenuCount(subMenuCount),
+    candidateMenuIndex(0) {
 }
 
 const char *MainMenu::getName() {
     return "main";
 }
 
-void MainMenu::onSelectButton() {
-    shouldChangeMenuNow = true;
-    selectedMenu = &chooseAnimationMenu;
+
+void MainMenu::onUpButton() {
+    if (candidateMenuIndex > 0) {
+        candidateMenuIndex--;
+    } else {
+        candidateMenuIndex = subMenuCount - 1;
+    }
+    showCandidateMenu();
 }
+
+void MainMenu::onDownButton() {
+    if (candidateMenuIndex < (subMenuCount - 1)) {
+        candidateMenuIndex++;
+    } else {
+        candidateMenuIndex = 0;
+    }
+    showCandidateMenu();
+}
+
+void MainMenu::showCandidateMenu(void) {
+    Menu* candidate = subMenus[candidateMenuIndex];
+    Serial.print("candidate: ");
+    Serial.println(candidate->getName());
+}
+
+void MainMenu::onSelectButton() {
+    selectedMenu = subMenus[candidateMenuIndex];
+    shouldChangeMenuNow = true;
+}
+
+void MainMenu::onActivate(void) {
+    showCandidateMenu();
+}
+
+void MainMenu::onRestore(void) {
+    showCandidateMenu();
+}
+
 
 MenuStack::MenuStack(
         Menu *initialMenu,
@@ -62,6 +149,11 @@ MenuStack::MenuStack(
     selectButton(selectButton),
     upButton(upButton),
     downButton(downButton) {
+}
+
+void MenuStack::initalize(void) {
+    currentMenu->activate(NULL);
+    currentMenu->onActivate();
 }
 
 void MenuStack::process() {

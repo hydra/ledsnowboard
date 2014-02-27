@@ -25,7 +25,10 @@
 #include "File/FileReader.h"
 #include "File/SdCardFileReader.h"
 
+#include "AnimationScheduler.h"
+
 #include "Menu.h"
+
 
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
@@ -79,9 +82,14 @@ DebouncedInput selectButton;
 class ChooseAnimationMenu;
 class MainMenu;
 
+AnimationScheduler animationScheduler(&animationFrameAdvanceAction, &animator);
+
 ChooseAnimationMenu chooseAnimationMenu;
-MainMenu mainMenu;
+FrequencyMenu frequencyMenu(&animationScheduler, &animator);
+Menu *subMenus[] = {&chooseAnimationMenu, &frequencyMenu};
+MainMenu mainMenu(subMenus, 2);
 MenuStack menuStack(&mainMenu, backButton, selectButton, upButton, downButton);
+
 
 SdBaseFile* root;
 char fileName[13];
@@ -220,6 +228,7 @@ void setup() {
     }
 #endif
 
+    menuStack.initalize();
 
     Serial.print("FINISHED SETUP");
     Serial.print("\n");
@@ -269,12 +278,7 @@ void openNextAnimation() {
     animator.readAnimationDetails(&fileReader);
     showFreeRam();
 
-#ifdef OVERRIDE_ANIMATION_FREQUENCY
-    animationFrameAdvanceAction.setDelayMillis(1);
-#else
-    animationFrameAdvanceAction.setDelayMillis(animator.timeAxisFrequencyMillis);
-#endif
-    animationFrameAdvanceAction.reset();
+    animationScheduler.update();
 }
 
 #if SHOW_SD_CARD_CONTENTS_ON_INSERTION
