@@ -9,10 +9,10 @@
 
 class ArduinoDigitalInput : public DigitalInput {
 public:
-  virtual void read(void);
-  void configure(unsigned int hardwarePin);
+    virtual void read(void);
+    void configure(unsigned int hardwarePin);
 private:
-  unsigned int hardwarePin;
+    unsigned int hardwarePin;
 };
 
 #endif

@@ -9,15 +9,15 @@
 
 class DigitalInput: public Input {
 public:
-  virtual void read(void) = 0;
-  bool getBoolValue(void) {
-    return value;
-  }
-  int getIntValue(void) {
-    return value;
-  }
+    virtual void read(void) = 0;
+    bool getBoolValue(void) {
+        return value;
+    }
+    int getIntValue(void) {
+        return value;
+    }
 protected:
-  bool value;
+    bool value;
 };
 
 #endif

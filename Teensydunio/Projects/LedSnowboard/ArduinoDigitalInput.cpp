@@ -9,11 +9,11 @@
 #include "ArduinoDigitalInput.h"
 
 void ArduinoDigitalInput::read(void) {
-  int intValue = digitalRead(hardwarePin);
-  value = intValue;
+    int intValue = digitalRead(hardwarePin);
+    value = intValue;
 }
 
 void ArduinoDigitalInput::configure(unsigned int hardwarePin) {
-  this->hardwarePin = hardwarePin;
-  pinMode(hardwarePin, INPUT);
+    this->hardwarePin = hardwarePin;
+    pinMode(hardwarePin, INPUT);
 }

@@ -23,23 +23,23 @@
 class Sampler {
 
 public:
-  Sampler();
+    Sampler();
 
-  void addAccelerationData(AccelerationData& accelerationData);
-  bool isReady(void);
-  bool hasRemainingData(void);
+    void addAccelerationData(AccelerationData& accelerationData);
+    bool isReady(void);
+    bool hasRemainingData(void);
 
-  AccelerationData& getSample(void);
-  void prepareForUpdate(void);
+    AccelerationData& getSample(void);
+    void prepareForUpdate(void);
 
 private:
-  AccelerationData buffer[SAMPLE_BUFFER_SIZE];
-  unsigned int totalSamplesInBuffer;
+    AccelerationData buffer[SAMPLE_BUFFER_SIZE];
+    unsigned int totalSamplesInBuffer;
 
-  AccelerationData sample;
+    AccelerationData sample;
 
-  bool isFull(void);
-  bool isEmpty(void);
+    bool isFull(void);
+    bool isEmpty(void);
 
 };
 #endif

@@ -7,9 +7,9 @@
 
 class Input {
 public:
-  virtual void read(void) = 0;
-  virtual bool getBoolValue(void) = 0;
-  virtual int getIntValue(void) = 0;
+    virtual void read(void) = 0;
+    virtual bool getBoolValue(void) = 0;
+    virtual int getIntValue(void) = 0;
 };
 
 #endif
