@@ -533,7 +533,7 @@ void Animator::readTimeAxisHeader(void) {
     Serial.print("time axis high value : ");
     Serial.print(timeAxisHighValue, DEC);
     Serial.println();
-    timeAxisFrequencyMillis = animationReader->readUnsignedByte();  // FIXME should be uint16_t
+    timeAxisFrequencyMillis = animationReader->readUnsignedInt16();
     Serial.print("time axis speed : ");
     Serial.print(timeAxisFrequencyMillis, DEC);
     Serial.println();
@@ -661,14 +661,17 @@ void Animator::processFrame(uint8_t frameIndex) {
     Serial.print("Frame: ");
     Serial.println(frameIndex);
 
-    Serial.print("Frame data (ledIndex,type): ");
+    Serial.print("Frame data (ledIndex,ledNumber,type): ");
 #endif
     for (uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
 
+        uint16_t ledNumber = animationReader->readUnsignedInt16();
         uint8_t frameType = animationReader->readUnsignedByte();
 #ifdef DEBUG_ANIMATOR_FRAME
         Serial.print("(0x");
         Serial.print(ledIndex, HEX);
+        Serial.print(",0x");
+        Serial.print(ledNumber, HEX);
         Serial.print(",0x");
         Serial.print(frameType, HEX);
         Serial.print(")");

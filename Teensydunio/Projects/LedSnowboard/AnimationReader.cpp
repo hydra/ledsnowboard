@@ -88,3 +88,11 @@ uint32_t AnimationReader::readUnsignedInt32(void) {
     
     return result;
 }
+
+uint16_t AnimationReader::readUnsignedInt16(void) {
+
+    uint16_t result = readUnsignedByte();
+    result |= readUnsignedByte() << 8;
+
+    return result;
+}

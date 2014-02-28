@@ -15,6 +15,7 @@ public:
     AnimationReader(FileReader *fileReader);
     
     uint32_t readUnsignedInt32(void);
+    uint16_t readUnsignedInt16(void);
     uint8_t readUnsignedByte(void);
     int8_t readSignedByte(void);
     
