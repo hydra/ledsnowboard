@@ -7,6 +7,8 @@
 
 #include "WProgram.h"
 
+#include "Config.h"
+
 #include <SdFat.h>
 #include <SdFatUtil.h>
 
