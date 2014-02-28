@@ -179,40 +179,45 @@ void Animator::readAnimationDetails(FileReader *_fileReader) {
     Serial.print(valueAxisCount, DEC);
     Serial.println();
 
-    size_t memoryToAllocate = valueAxisCount * sizeof(ValueAxis *);
-    Serial.print("memoryToAllocate: ");
-    Serial.print(memoryToAllocate, DEC);
-    Serial.println();
-
-    valueAxes = (ValueAxis **)malloc(memoryToAllocate);
-    verifyMemoryAllocation((void *)valueAxes);
-    showFreeRam();
-
     readTimeAxisHeader();
 
-    for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
-            valueAxisIndex++) {
-        ValueAxis *valueAxis = new ValueAxis(ledCount, animationReader);
-        valueAxes[valueAxisIndex] = valueAxis;
-        readValueAxis(valueAxisIndex);
-    }
+    if (valueAxisCount > 0) {
+        size_t memoryToAllocate = valueAxisCount * sizeof(ValueAxis *);
+        Serial.print("memoryToAllocate: ");
+        Serial.print(memoryToAllocate, DEC);
+        Serial.println();
 
-    memoryToAllocate = SOURCE_COUNT * sizeof(ValueAxisSource *);
-    Serial.print("memoryToAllocate: ");
-    Serial.print(memoryToAllocate, DEC);
-    Serial.println();
+        valueAxes = (ValueAxis **)malloc(memoryToAllocate);
+        verifyMemoryAllocation((void *)valueAxes);
+        showFreeRam();
 
-    valueAxisSources = (ValueAxisSource **)malloc(memoryToAllocate);
-    verifyMemoryAllocation((void *)valueAxisSources);
-    showFreeRam();
+        for (uint8_t valueAxisIndex = 0; valueAxisIndex < valueAxisCount;
+                valueAxisIndex++) {
+            ValueAxis *valueAxis = new ValueAxis(ledCount, animationReader);
+            valueAxes[valueAxisIndex] = valueAxis;
+            readValueAxis(valueAxisIndex);
+        }
 
-    for (uint8_t valueAxisSourceIndex = 0; valueAxisSourceIndex < SOURCE_COUNT;
-            valueAxisSourceIndex++) {
-        ValueAxisSource *valueAxisSource = new ValueAxisSource(valueAxes, valueAxisCount);
-        valueAxisSources[valueAxisSourceIndex] = valueAxisSource;
+        memoryToAllocate = SOURCE_COUNT * sizeof(ValueAxisSource *);
+        Serial.print("memoryToAllocate: ");
+        Serial.print(memoryToAllocate, DEC);
+        Serial.println();
+
+        valueAxisSources = (ValueAxisSource **)malloc(memoryToAllocate);
+        verifyMemoryAllocation((void *)valueAxisSources);
+        showFreeRam();
+
+        for (uint8_t valueAxisSourceIndex = 0; valueAxisSourceIndex < SOURCE_COUNT;
+                valueAxisSourceIndex++) {
+            ValueAxisSource *valueAxisSource = new ValueAxisSource(valueAxes, valueAxisCount);
+            valueAxisSources[valueAxisSourceIndex] = valueAxisSource;
+        }
     }
 
     animationByteOffsetOfFirstFrame = animationReader->getPosition();
+    Serial.print("animationByteOffsetOfFirstFrame: 0x");
+    Serial.print(animationByteOffsetOfFirstFrame, DEC);
+    Serial.println();
 
     frameIndex = timeAxisLowValue;
 
