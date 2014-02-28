@@ -25,8 +25,8 @@
 #define DOWN_BUTTON_PIN 23
 #define SELECT_BUTTON_PIN 22
 
-#define LEDS_PER_STRIP 60
-#define HACK_MIRROR_LEDS
+#define LEDS_PER_STRIP 22
+//#define HACK_MIRROR_LEDS
 
 // hack to lower brightness by 50% to a reasonable level so the tester is not blinded
 #define APPLY_BRIGHTNESS_HACK
@@ -72,5 +72,7 @@
 
 //#define DEBUG_ALL_ACCEL_DATA
 //#define DEBUG_ACCEL_MIN_MAX
+
+//#define DEBUG_SD_READER
 
 #endif /* CONFIG_H_ */
