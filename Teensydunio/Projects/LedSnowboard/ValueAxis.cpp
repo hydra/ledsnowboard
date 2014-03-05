@@ -104,9 +104,12 @@ void ValueAxis::readFunctionRanges(void) {
 	}
     Serial.println(" OK");
 
+    uint16_t ledNumber;
+
     Serial.print("Reading ledFunctionRanges (ledIndex, rangeCount):");
     for(uint16_t ledIndex = 0; ledIndex < ledCount; ledIndex++) {
         LedFunctionRanges *ledFunctionRange = ledFunctionRanges[ledIndex];
+        ledNumber = animationReader->readUnsignedInt16();
         rangeCount = animationReader->readUnsignedByte();
 
         Serial.print(" (");
