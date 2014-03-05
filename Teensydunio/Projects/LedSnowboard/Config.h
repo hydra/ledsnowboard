@@ -28,6 +28,16 @@
 #define LEDS_PER_STRIP 22
 //#define HACK_MIRROR_LEDS
 
+#define HACK_FOR_TALL_GRID
+#ifdef HACK_FOR_TALL_GRID
+// HACK old code was written for a TALL grid
+#define GRID_HEIGHT LEDS_PER_STRIP
+#define GRID_WIDTH 8
+#else
+#define GRID_HEIGHT 8
+#define GRID_WIDTH LEDS_PER_STRIP
+#endif
+
 // hack to lower brightness by 50% to a reasonable level so the tester is not blinded
 #define APPLY_BRIGHTNESS_HACK
 //#define BRIGHTNESS_50_PERCENT

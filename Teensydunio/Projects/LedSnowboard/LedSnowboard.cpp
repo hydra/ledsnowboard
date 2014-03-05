@@ -29,6 +29,14 @@
 
 #include "Menu.h"
 
+#include "Rgb.h"
+#include "RgbLed.h"
+#include "ColorGenerator.h"
+#include "ColorGenerators.h"
+#include "HsvRgbConverter.h"
+#include "Palette.h"
+#include "Animation.h"
+#include "Animations.h"
 
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
@@ -44,6 +52,59 @@ AccelGyro accelGyro(earlyStartupStatusAndSdCardPresenceLed, sensorDataStore, sam
 
 SdCardFileReader fileReader;
 Animator animator;
+
+RGB_t palette1Colors[] = { { 255, 0, 0 }, { 255, 0, 255 }, { 255, 255, 0 }, { 255, 255, 255 }, { 0, 255, 255 }, { 0, 255, 0 },
+    { 0, 0, 255 } };
+RGB_t palette2Colors[] = { { 255, 0, 0 }, { 255, 0, 0 }, { 0, 0, 0 }, { 255, 255, 255 }, { 0, 0, 0 }, { 0, 0, 255 }, { 0, 0, 255 } };
+RGB_t firePaletteColors[] = { { 255, 0, 0 }, {254, 108, 1 }, { 254, 179, 1 }, { 255, 255, 0 } };
+RGB_t lemmingsPaletteColors[] = { { 64, 64, 192 }, { 255, 255, 255 }, {32, 176, 32 } };
+/*
+RGB_t gnuAlteredGeneticsColors[] = {
+    { 178, 176, 101 }, { 138, 127, 120 }, { 119, 104, 64 }, { 77, 67, 69 }, { 236, 231, 217 }
+};
+*/
+
+Palette const palettes[] = {
+    { COLORS_IN_PALETTE(palette1Colors), palette1Colors },
+    { COLORS_IN_PALETTE(palette2Colors), palette2Colors },
+    { COLORS_IN_PALETTE(firePaletteColors), firePaletteColors },
+    { COLORS_IN_PALETTE(lemmingsPaletteColors), lemmingsPaletteColors }
+    //{ COLORS_IN_PALETTE(gnuAlteredGeneticsColors), gnuAlteredGeneticsColors }
+};
+
+#define TOTAL_PALETTES (sizeof(palettes) / sizeof(Palette))
+
+uint8_t paletteIndex = 0;
+const Palette *currentPalette = &palettes[paletteIndex];
+
+
+LeftRightTiltColorGenerator leftRightTiltColorGenerator(sensorDataStore);
+
+SolidAnimation solidAnimation(leftRightTiltColorGenerator);
+FlashAnimation flashAnimation(leftRightTiltColorGenerator);
+LineTopToBottomAnimation lineTopToBottomAnimation(leftRightTiltColorGenerator, GRID_HEIGHT);
+ThickLineTopToBottomAnimation thickLineTopToBottomAnimation(leftRightTiltColorGenerator, GRID_HEIGHT);
+SawtoothFadeAnimation sawtoothFadeAnimation(leftRightTiltColorGenerator);
+UpDownFadeAnimation upDownFadeAnimation(leftRightTiltColorGenerator);
+CarLightsAnimation carLightsAnimation(sensorDataStore, GRID_WIDTH, GRID_HEIGHT);
+MovingRainbowAnimation movingRainbowAnimation(sensorDataStore, GRID_HEIGHT);
+
+#define TOTAL_ANIMATIONS 8
+Animation* const animations[] = {
+    &movingRainbowAnimation,
+    &carLightsAnimation,
+    &thickLineTopToBottomAnimation,
+    &lineTopToBottomAnimation,
+    &upDownFadeAnimation,
+    &sawtoothFadeAnimation,
+    &flashAnimation,
+    &solidAnimation
+};
+
+unsigned int animationIndex = 0;
+Animation* currentAnimation;
+unsigned long usDelay;
+unsigned int frameCounter = 0;
 
 ScheduledAction sdCardStatusAction;
 ScheduledAction serialStatusAction;
@@ -159,6 +220,75 @@ void resetSdCard(void) {
     openSdCard();
 }
 
+
+void updateAnimationDelay(void) {
+	usDelay = (1000L * 100) + currentAnimation->getFrameDelayMicros();
+	Serial.print("usDelay: ");
+	Serial.println(usDelay, DEC);
+
+	animationFrameAdvanceAction.setDelayMicros(usDelay);
+	animationFrameAdvanceAction.reset();
+}
+
+void resetAnimation(void) {
+	currentAnimation = animations[animationIndex];
+	currentAnimation->reset();
+
+	Serial.println("Animation reset");
+
+	updateAnimationDelay();
+}
+
+void updateSimpleAnimation(void) {
+
+	if (!animationFrameAdvanceAction.isActionDue()) {
+		return;
+	}
+
+	currentAnimation->frameBegin();
+
+	RGB_t rgb;
+	RgbLed rgbLedBuffer;
+	rgbLedBuffer.rgb = &rgb;
+
+	for (uint8_t y = 0; y < GRID_HEIGHT; y++) {
+#ifdef DEBUG_LED_INDEX
+		Serial.print("ledIndex: ");
+#endif
+		for (uint8_t x = 0; x < GRID_WIDTH; x++) {
+
+#ifdef HACK_FOR_TALL_GRID
+			uint32_t ledIndex = (x * GRID_HEIGHT) + y;
+#else
+			uint32_t ledIndex = (y * GRID_WIDTH) + x;
+#endif
+
+#ifdef DEBUG_LED_INDEX
+			if (x != 0) {
+				Serial.print(", ");
+			}
+
+			Serial.print(ledIndex, DEC);
+#endif
+			currentAnimation->updateLedColor(x, y, rgbLedBuffer);
+
+			leds.setPixel(
+				ledIndex,
+				rgbLedBuffer.rgb->r,
+				rgbLedBuffer.rgb->g,
+				rgbLedBuffer.rgb->b
+			);
+		}
+#ifdef DEBUG_LED_INDEX
+		Serial.println();
+#endif
+	}
+
+	currentAnimation->frameEnd();
+
+	leds.show();
+}
+
 void setup() {
     earlyStartupStatusAndSdCardPresenceLed.configure();
     cpuStatusLed.configure();
@@ -230,11 +360,37 @@ void setup() {
 
     menuStack.initalize();
 
-    Serial.print("FINISHED SETUP");
-    Serial.print("\n");
+    Serial.println("FINISHED SETUP");
+
+    resetAnimation();
 }
 
 void openNextAnimation() {
+#ifdef USE_ANIMATOR
+	openNextAnimationFile();
+#else
+	animationIndex++;
+	if (animationIndex == TOTAL_ANIMATIONS) {
+		animationIndex = 0;
+	}
+	resetAnimation();
+#endif
+}
+
+void openPreviousAnimation() {
+#ifdef USE_ANIMATOR
+	openNextAnimationFile();
+#else
+	if (animationIndex == 0) {
+		animationIndex = TOTAL_ANIMATIONS - 1;
+	} else {
+		animationIndex--;
+	}
+	resetAnimation();
+#endif
+}
+
+void openNextAnimationFile() {
 
     bool opened = false;
 
@@ -331,6 +487,7 @@ void updateCpuActivityLed(void) {
   cpuStatusLed.toggle();
 }
 
+
 void updateAnimation() {
     if (!animator.haveAnimation()) {
         return;
@@ -411,8 +568,9 @@ void loop() {
     updateCpuActivityLed();
     updateSerialStatus();
     processGyro();
-    checkSdCardStatus();
+    //checkSdCardStatus();
     processButtons();
     updateAnimation();
+    updateSimpleAnimation();
 }
 

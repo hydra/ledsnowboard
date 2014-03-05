@@ -9,7 +9,7 @@
 
 #include "AccelGyro.h"
 
-AccelGyro::AccelGyro(StatusLed statusLed, SensorDataStore sensorDataStore, Sampler sampler) :
+AccelGyro::AccelGyro(StatusLed& statusLed, SensorDataStore& sensorDataStore, Sampler& sampler) :
         statusLed(statusLed),
         sensorDataStore(sensorDataStore),
         sampler(sampler),

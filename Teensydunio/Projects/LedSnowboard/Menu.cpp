@@ -22,6 +22,7 @@
 
 void stopAnimation(void);
 void openNextAnimation(void);
+void openPreviousAnimation(void);
 
 void waitForButtonRelease(DebouncedInput button);
 
@@ -37,7 +38,7 @@ const char *ChooseAnimationMenu::getName() {
 
 void ChooseAnimationMenu::onUpButton() {
     stopAnimation();
-    openNextAnimation();
+    openPreviousAnimation();
 }
 
 void ChooseAnimationMenu::onDownButton() {

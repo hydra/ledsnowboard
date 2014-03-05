@@ -24,7 +24,7 @@ public:
 
 class AccelGyro {
 public:
-    AccelGyro(StatusLed statusLed, SensorDataStore sensorDataStore, Sampler sampler);
+    AccelGyro(StatusLed& statusLed, SensorDataStore& sensorDataStore, Sampler& sampler);
 
     void configure();
 
@@ -38,9 +38,9 @@ public:
     AccelerationData *getLatestSample(void);
 
 private:
-    StatusLed statusLed;
-    SensorDataStore sensorDataStore;
-    Sampler sampler;
+    StatusLed& statusLed;
+    SensorDataStore& sensorDataStore;
+    Sampler& sampler;
 
     NumberRange xRange;
     NumberRange yRange;
