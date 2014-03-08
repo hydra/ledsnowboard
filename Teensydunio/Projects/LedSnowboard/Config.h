@@ -28,6 +28,8 @@
 #define LEDS_PER_STRIP 22
 //#define HACK_MIRROR_LEDS
 
+#define USE_ANIMATOR // Enable to use a codec based animator, disable to use a programmatic animator.
+
 #define HACK_FOR_TALL_GRID
 #ifdef HACK_FOR_TALL_GRID
 // HACK old code was written for a TALL grid

@@ -362,31 +362,8 @@ void setup() {
 
     Serial.println("FINISHED SETUP");
 
+#ifndef USE_ANIMATOR
     resetAnimation();
-}
-
-void openNextAnimation() {
-#ifdef USE_ANIMATOR
-	openNextAnimationFile();
-#else
-	animationIndex++;
-	if (animationIndex == TOTAL_ANIMATIONS) {
-		animationIndex = 0;
-	}
-	resetAnimation();
-#endif
-}
-
-void openPreviousAnimation() {
-#ifdef USE_ANIMATOR
-	openNextAnimationFile();
-#else
-	if (animationIndex == 0) {
-		animationIndex = TOTAL_ANIMATIONS - 1;
-	} else {
-		animationIndex--;
-	}
-	resetAnimation();
 #endif
 }
 
@@ -437,6 +414,31 @@ void openNextAnimationFile() {
     animationScheduler.update();
 }
 
+void openNextAnimation() {
+#ifdef USE_ANIMATOR
+    openNextAnimationFile();
+#else
+    animationIndex++;
+    if (animationIndex == TOTAL_ANIMATIONS) {
+        animationIndex = 0;
+    }
+    resetAnimation();
+#endif
+}
+
+void openPreviousAnimation() {
+#ifdef USE_ANIMATOR
+    openNextAnimationFile();
+#else
+    if (animationIndex == 0) {
+        animationIndex = TOTAL_ANIMATIONS - 1;
+    } else {
+        animationIndex--;
+    }
+    resetAnimation();
+#endif
+}
+
 #if SHOW_SD_CARD_CONTENTS_ON_INSERTION
 void showSdCardContents(void) {
     Serial.println("Volume is FAT");
@@ -465,7 +467,9 @@ void onSdCardInserted() {
         return;
     }
 
+#ifdef USE_ANIMATOR
     openNextAnimation();
+#endif
 }
 
 void stopAnimation() {
@@ -568,9 +572,11 @@ void loop() {
     updateCpuActivityLed();
     updateSerialStatus();
     processGyro();
-    //checkSdCardStatus();
+    checkSdCardStatus();
     processButtons();
+#ifdef USE_ANIMATOR
     updateAnimation();
+#else
     updateSimpleAnimation();
+#endif
 }
-
