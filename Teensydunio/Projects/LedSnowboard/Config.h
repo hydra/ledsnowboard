@@ -25,20 +25,13 @@
 #define DOWN_BUTTON_PIN 23
 #define SELECT_BUTTON_PIN 22
 
-#define LEDS_PER_STRIP 22
+#define LEDS_PER_STRIP 44
 //#define HACK_MIRROR_LEDS
 
-#define USE_ANIMATOR // Enable to use a codec based animator, disable to use a programmatic animator.
+//#define USE_ANIMATOR // Enable to use a codec based animator, disable to use a programmatic animator.
 
-#define HACK_FOR_TALL_GRID
-#ifdef HACK_FOR_TALL_GRID
-// HACK old code was written for a TALL grid
-#define GRID_HEIGHT LEDS_PER_STRIP
-#define GRID_WIDTH 8
-#else
-#define GRID_HEIGHT 8
-#define GRID_WIDTH LEDS_PER_STRIP
-#endif
+#define GRID_WIDTH 9
+#define GRID_HEIGHT 59
 
 // hack to lower brightness by 50% to a reasonable level so the tester is not blinded
 #define APPLY_BRIGHTNESS_HACK

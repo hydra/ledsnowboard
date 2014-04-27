@@ -148,8 +148,8 @@ enum CarDirectionStates {
   TURNING_LEFT = 0, STRAIGHT_AHEAD, TURNING_RIGHT
 };
 
-#define INDICATOR_WIDTH 2
-#define INDICATOR_HEIGHT 2
+#define INDICATOR_WIDTH 3
+#define INDICATOR_HEIGHT 13
 
 #define FRAMES_PER_BLINK_ON_AND_OFF 10
 #define FRAMES_PER_BLINK_ON 5
@@ -194,7 +194,7 @@ void CarLightsAnimation::updateLedColor(uint8_t x, uint8_t y, RgbLed& rgbLed) {
   RGB_t amber = {255, 147, 0};
   RGB_t black = {0, 0, 0};
 
-  if (y < INDICATOR_HEIGHT || y > gridHeight - INDICATOR_HEIGHT) {
+  if (y < INDICATOR_HEIGHT || y >= gridHeight - INDICATOR_HEIGHT) {
 
     if (y < INDICATOR_HEIGHT) {
       if (forwards) {
@@ -202,7 +202,7 @@ void CarLightsAnimation::updateLedColor(uint8_t x, uint8_t y, RgbLed& rgbLed) {
       } else {
         rgbLed.setColor(red);
       }
-    } else if (y > gridHeight - INDICATOR_HEIGHT) {
+    } else if (y >= gridHeight - INDICATOR_HEIGHT) {
       if (forwards) {
         rgbLed.setColor(red);
       } else {

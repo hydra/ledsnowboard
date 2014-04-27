@@ -38,6 +38,10 @@
 #include "Animation.h"
 #include "Animations.h"
 
+#include "LedGrid.h"
+
+LedGrid ledGrid(GRID_WIDTH, GRID_HEIGHT, ledGridToIndexMapping);
+
 ScheduledAction statusLedAction;
 ScheduledAction animationFrameAdvanceAction;
 
@@ -257,17 +261,31 @@ void updateSimpleAnimation(void) {
 #endif
 		for (uint8_t x = 0; x < GRID_WIDTH; x++) {
 
+/*
 #ifdef HACK_FOR_TALL_GRID
 			uint32_t ledIndex = (x * GRID_HEIGHT) + y;
 #else
 			uint32_t ledIndex = (y * GRID_WIDTH) + x;
 #endif
+*/
 
 #ifdef DEBUG_LED_INDEX
 			if (x != 0) {
 				Serial.print(", ");
 			}
+#endif
 
+
+			uint16_t oneBasedLedIndex = ledGrid.retrieveLedNumberByPosition(x, y);
+			if (oneBasedLedIndex == 0) {
+#ifdef DEBUG_LED_INDEX
+				Serial.print("N/A");
+#endif
+				continue;
+			}
+			uint32_t ledIndex = oneBasedLedIndex - 1;
+
+#ifdef DEBUG_LED_INDEX
 			Serial.print(ledIndex, DEC);
 #endif
 			currentAnimation->updateLedColor(x, y, rgbLedBuffer);
